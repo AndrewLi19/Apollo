@@ -1,0 +1,11 @@
+Debug/*
+#*.launch
+#*.cproject
+#*.mxproject
+#*.project
+Release/*
+./settings/language.settings.xml
+/Release/
+/Debug/
+/FSBL/Debug/
+/FSBL/Release/
