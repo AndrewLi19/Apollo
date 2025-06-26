@@ -89,7 +89,16 @@ int main(void)
   MX_GPIO_Init();
   MX_XSPI1_Init();
   /* USER CODE BEGIN 2 */
-  Semper_Read_FlashID(&hxspi1);
+  SEMPER_HandleTypeDef flash1;
+  Semper_Flash_Init(&flash1, &hxspi1);
+  uint32_t flashID = 0;
+  Semper_Read_FlashID(&flash1, &flashID);
+  Semper_8Pins_Mode(&flash1);
+  uint32_t tmpflashID = 0;
+  Semper_Read_FlashID(&flash1, &tmpflashID);
+  uint8_t read_data;
+  Semper_Read_Reg(&flash1,SEMPER_ADDR_CFR1V,&read_data);
+  Semper_Read_FlashID(&flash1, &tmpflashID);
   /* USER CODE END 2 */
 
   /* Infinite loop */
