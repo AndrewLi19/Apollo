@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "semperflash_drv.h"
+#include "semperflash_test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,14 +91,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
   SEMPER_HandleTypeDef flash1;
   Semper_Flash_Init(&flash1, &hxspi1);
-  uint32_t flashID = 0;
-  Semper_Read_FlashID(&flash1, &flashID);
-  Semper_8Pins_Mode(&flash1);
-  uint32_t tmpflashID = 0;
-  Semper_Read_FlashID(&flash1, &tmpflashID);
-  uint8_t read_data;
-  Semper_Read_Reg(&flash1,SEMPER_ADDR_CFR1V,&read_data);
-  Semper_Read_FlashID(&flash1, &tmpflashID);
+//  Semper_Read_Memory_Test(&flash1); // 测试读取内存功能
+  // Semper_Clear_Prog_Err_Flag_Test(&flash1); // 测试清除编程错误标志功能
+//  Semper_Erase_Sector_Test(&flash1); // 测试擦除扇区功能
+//   Semper_Prog_Page_Test(&flash1); // 测试编程页面功能
+  Semper_Write_Reg_Test(&flash1); // 测试写寄存器功能
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
