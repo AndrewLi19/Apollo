@@ -24,7 +24,7 @@
 #define SEMPER_CMD_EX4B 0xB8  // 退出4字节地址模式命令
 #define SEMPER_CMD_READ 0x13
 #define SEMPER_CMD_READ_FAST 0x0B
-#define SEMPER_CMD_READ_8S 0xEC
+#define SEMPER_CMD_READ_8S 0xECEC
 #define SEMPER_CMD_RESET_EN 0x66
 #define SEMPER_CMD_RESET 0x99
 #define SEMPER_CMD_Prog_Page 0x12
@@ -70,4 +70,7 @@ semper_status_t Semper_Poll_RDYBSY(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Write_Enable(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef*, uint32_t);
 semper_status_t Semper_Clear_Prog_Err_Flag(SEMPER_HandleTypeDef*);
+semper_status_t Semper_Read_Memory_8S(SEMPER_HandleTypeDef*, uint32_t, uint8_t*, uint32_t);
+semper_status_t Semper_Read_Memory(SEMPER_HandleTypeDef*, uint32_t, uint8_t*, uint32_t);
+semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef*);
 #endif /* INC_SEMPERFLASH_DRV_H_ */

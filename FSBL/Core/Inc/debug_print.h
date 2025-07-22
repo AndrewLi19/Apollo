@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #define DEBUGPRINT_RATE 8000000
+#define SWO_CODR_ADDR 0xE008A010
 
 void debug_print_init(void);
 int _write(int file, char *ptr, int len);

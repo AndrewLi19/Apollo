@@ -8,7 +8,7 @@
 
 void debug_print_init(void)
 {
-	*(__IO uint32_t*)(0x5C003010) = ((SystemCoreClock / DEBUGPRINT_RATE) - 1); // SWO_CODR
+	*(__IO uint32_t*)(SWO_CODR_ADDR) = ((SystemCoreClock / DEBUGPRINT_RATE) - 1); // SWO_CODR
 }
 
 int _write(int file, char *ptr, int len)
