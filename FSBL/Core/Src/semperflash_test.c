@@ -420,11 +420,11 @@ void Semper_Memory_Mapped_Mode_Test(SEMPER_HandleTypeDef* flash1)
     }
 
     // 读取内存映射模式下的数据
-    uint8_t read_data[64] = {0}; // 假设读取64字节数据
-    uint32_t read_addr = 0x70010000;
+    uint32_t read_addr = 0x90010000;
+    volatile uint8_t* read_data = (volatile uint8_t*)read_addr;
 
     printf("Read Memory Data in Memory Mapped Mode from 0x%08X:\n", read_addr);
-    for (int i = 0; i < sizeof(read_data); i++) {
+    for (int i = 0; i < 64; i++) {
         printf("0x%02X ", read_data[i]);
         if ((i + 1) % 16 == 0) {
             printf("\n");

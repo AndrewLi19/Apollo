@@ -646,17 +646,23 @@ semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef* flash1)
 	s_command.OperationType = HAL_XSPI_OPTYPE_READ_CFG;
 	if (flash1->interface_mode == SEMPER_1S_MODE)
 	{
-		s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
-		s_command.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
-		s_command.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
-		s_command.Instruction = SEMPER_CMD_READ; // 1S read command
-		s_command.AddressMode = HAL_XSPI_ADDRESS_1_LINE;
-		s_command.AddressDTRMode = HAL_XSPI_ADDRESS_DTR_DISABLE;
-		s_command.AddressWidth = HAL_XSPI_ADDRESS_32_BITS; // 1S mode uses 24-bit address
-		s_command.DataMode = HAL_XSPI_DATA_1_LINE;
-		s_command.DataDTRMode = HAL_XSPI_DATA_DTR_DISABLE;
-		s_command.DummyCycles = 0; // No dummy cycles for 1S mode
-  		s_command.DQSMode = HAL_XSPI_DQS_DISABLE;
+		s_command.Instruction = SEMPER_CMD_READ;  // Read command
+        s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+        s_command.AddressMode = HAL_XSPI_ADDRESS_1_LINE;
+        s_command.DataMode = HAL_XSPI_DATA_1_LINE;
+        s_command.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
+
+//		s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+//		s_command.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
+//		s_command.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
+//		s_command.Instruction = SEMPER_CMD_READ; // 1S read command
+//		s_command.AddressMode = HAL_XSPI_ADDRESS_1_LINE;
+//		s_command.AddressDTRMode = HAL_XSPI_ADDRESS_DTR_DISABLE;
+//		s_command.AddressWidth = HAL_XSPI_ADDRESS_32_BITS; // 1S mode uses 24-bit address
+//		s_command.DataMode = HAL_XSPI_DATA_1_LINE;
+//		s_command.DataDTRMode = HAL_XSPI_DATA_DTR_DISABLE;
+//		s_command.DummyCycles = 0; // No dummy cycles for 1S mode
+//  	s_command.DQSMode = HAL_XSPI_DQS_DISABLE;
 	}
 	else if (flash1->interface_mode == SEMPER_8S_MODE)
 	{
