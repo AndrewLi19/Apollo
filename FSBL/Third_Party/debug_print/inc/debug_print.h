@@ -17,5 +17,6 @@ void debug_print_init(void);
 int _write(int file, char *ptr, int len);
 void DWT_Init(void);
 uint32_t DWT_GetCycles(void);
+int __io_putchar(int);
 
 #endif /* INC_DEBUGPRINT_H_ */

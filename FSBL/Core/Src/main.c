@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "semperflash_test.h"
+
+#include "unity.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,18 +91,22 @@ int main(void)
   MX_GPIO_Init();
   MX_XSPI1_Init();
   /* USER CODE BEGIN 2 */
-  SEMPER_HandleTypeDef flash1;
-  Semper_Test_Init(&flash1, &hxspi1);
-  Semper_Read_Memory_8S_Test(&flash1); // 测试8S模式下的内存读取功能
-//  Semper_Read_Reg_Test(&flash1);
+//  SEMPER_HandleTypeDef flash1;
+//  Semper_Test_Init(&flash1, &hxspi1);
+//  Semper_Read_Memory_8S_Test(&flash1); // 测试8S模式下的内存读取功能
+////  Semper_Read_Reg_Test(&flash1);
 //  Semper_Read_ID_Test(&flash1); // 测试读取Flash ID功能
-//  Semper_Read_Memory_Test(&flash1); // 测试读取内存功能
-//   Semper_Clear_Prog_Err_Flag_Test(&flash1); // 测试清除编程错误标志功能
-//  Semper_Erase_Sector_Test(&flash1); // 测试擦除扇区功能
-  //  Semper_Prog_Page_Test(&flash1); // 测试编程页面功能
-//  Semper_Write_Reg_Test(&flash1); // 测试写寄存器功能
-//  Semper_Switch_Mode_Test(&flash1); // 测试切换模式功能
-  // Semper_Memory_Mapped_Mode_Test(&flash1); // 测试内存映射模式功能
+////  Semper_Read_Memory_Test(&flash1); // 测试读取内存功能
+////   Semper_Clear_Prog_Err_Flag_Test(&flash1); // 测试清除编程错误标志功能
+////  Semper_Erase_Sector_Test(&flash1); // 测试擦除扇区功能
+//  //  Semper_Prog_Page_Test(&flash1); // 测试编程页面功能
+////  Semper_Write_Reg_Test(&flash1); // 测试写寄存器功能
+////  Semper_Switch_Mode_Test(&flash1); // 测试切换模式功能
+//  // Semper_Memory_Mapped_Mode_Test(&flash1); // 测试内存映射模式功能
+
+
+  UNITY_BEGIN();
+  UNITY_END();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,7 +114,6 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

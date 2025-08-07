@@ -34,3 +34,9 @@ uint32_t DWT_GetCycles(void) {
     return DWT->CYCCNT;
 }
 
+int __io_putchar(int ch)
+{
+  ITM_SendChar(ch);
+  return ch;
+}
+
