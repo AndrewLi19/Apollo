@@ -36,7 +36,7 @@ void Semper_Read_Reg_Test(SEMPER_HandleTypeDef* flash1)
 void Semper_Read_Memory_Test(SEMPER_HandleTypeDef* flash1)
 {
     uint8_t read_data[128] = {0}; // 读取数据缓冲区
-    uint32_t read_addr = 0x00010000; // 假设从地址0x00001000开始读取
+    uint32_t read_addr = 0x00000000;
 
 #ifdef SEMPER_8S_TEST
     if (Semper_Read_Memory(flash1, read_addr, read_data, 64) == SEMPER_OK) {
@@ -130,14 +130,14 @@ void Semper_Prog_Page_Test(SEMPER_HandleTypeDef* flash1)
         write_data[i] = i; // 填充数据
     }
     
-    uint32_t write_addr = 0x00010000; // 假设从地址0x00001000开始写入
+    uint32_t write_addr = 0x00000000;
 
     flash1->addr_mode = SEMPER_ADDR_4BYTE;
 
-//    if (Semper_Erase_Sector(flash1, write_addr) != SEMPER_OK) {
-//        printf("Failed to erase sector before programming page.\n");
-//        return;
-//    }
+    if (Semper_Erase_Sector_4k(flash1, write_addr) != SEMPER_OK) {
+        printf("Failed to erase sector before programming page.\n");
+        return;
+    }
     if(Semper_Poll_RDYBSY(flash1) != SEMPER_OK)
     {
         printf("Device is busy, cannot program page.\n");
@@ -180,7 +180,7 @@ void Semper_Prog_Page_Test(SEMPER_HandleTypeDef* flash1)
         printf("Page programming failed at address 0x%08X.\n", write_addr);
     }
 
-    if(Semper_Erase_Sector(flash1, write_addr) != SEMPER_OK)
+    if(Semper_Erase_Sector_4k(flash1, write_addr) != SEMPER_OK)
     {
         printf("Failed to erase sector after programming page.\n");
         return;
@@ -192,7 +192,7 @@ void Semper_Prog_Page_Test(SEMPER_HandleTypeDef* flash1)
         return;
     }
     // 再次读取数据以验证擦除结果
-    uint8_t read_data_after_erase[256] = {0};
+    uint8_t read_data_after_erase[64] = {0};
     if (Semper_Read_Memory(flash1, write_addr, read_data_after_erase, sizeof(read_data_after_erase)) == SEMPER_OK) {
         printf("Data after sector erase:\n");
         for (int i = 0; i < sizeof(read_data_after_erase); i++) {
@@ -222,11 +222,11 @@ void Semper_Clear_Prog_Err_Flag_Test(SEMPER_HandleTypeDef* flash1)
     }
 }
 
-void Semper_Erase_Sector_Test(SEMPER_HandleTypeDef* flash1)
+void Semper_Erase_Sector_4k_Test(SEMPER_HandleTypeDef* flash1)
 {
     uint32_t erase_addr = 0x00010000; // 假设要擦除的扇区地址
     flash1->addr_mode = SEMPER_ADDR_4BYTE;
-    if (Semper_Erase_Sector(flash1, erase_addr) == SEMPER_OK) {
+    if (Semper_Erase_Sector_4k(flash1, erase_addr) == SEMPER_OK) {
         printf("Sector erased successfully at address 0x%08X.\n", erase_addr);
         
         uint8_t status = 0;
@@ -326,7 +326,7 @@ void Semper_Read_Memory_8S_Test(SEMPER_HandleTypeDef* flash1)
     for (int i = 0; i < sizeof(write_data); i++) {
         write_data[i] = i; // 填充数据
     }
-    if(Semper_Erase_Sector(flash1, read_addr) != SEMPER_OK)
+    if(Semper_Erase_Sector_4k(flash1, read_addr) != SEMPER_OK)
     {
         printf("Failed to erase sector before reading in 8S mode.\n");
         return;
@@ -367,7 +367,7 @@ void Semper_Read_Memory_8S_Test(SEMPER_HandleTypeDef* flash1)
     
 void Semper_Memory_Mapped_Mode_Test(SEMPER_HandleTypeDef* flash1)
 {
-    if(Semper_Erase_Sector(flash1, 0x00010000) != SEMPER_OK)
+    if(Semper_Erase_Sector_4k(flash1, 0x00000000) != SEMPER_OK)
     {
         printf("Failed to erase sector before enabling Memory Mapped Mode.\n");
         return;
@@ -383,7 +383,7 @@ void Semper_Memory_Mapped_Mode_Test(SEMPER_HandleTypeDef* flash1)
     for (int i = 0; i < sizeof(write_data); i++) {
         write_data[i] = i; // 填充数据
     }
-    uint32_t write_addr = 0x00010000; // 假设从地址0x00001000开始写入
+    uint32_t write_addr = 0x00000000; // 假设从地址0x00001000开始写入
 
     if (Semper_Prog_Page(flash1, write_addr, write_data, sizeof(write_data)) != SEMPER_OK) {
         printf("Failed to program page before enabling Memory Mapped Mode.\n");
@@ -420,7 +420,7 @@ void Semper_Memory_Mapped_Mode_Test(SEMPER_HandleTypeDef* flash1)
     }
 
     // 读取内存映射模式下的数据
-    uint32_t read_addr = 0x90010000;
+    uint32_t read_addr = 0x90000000;
     volatile uint8_t* read_data = (volatile uint8_t*)read_addr;
 
     printf("Read Memory Data in Memory Mapped Mode from 0x%08X:\n", read_addr);

@@ -23,9 +23,9 @@ semper_status_t Semper_Read_FlashID(SEMPER_HandleTypeDef* flash1,uint32_t* flash
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
     uint8_t rx_buf[3] = {0};
     uint32_t dummy_addr = 0x00000000;
-    XSPI_RegularCmdTypeDef  s_command = {0};
-
-    s_command.Instruction = SEMPER_CMD_READID;
+    XSPI_RegularCmdTypeDef  s_command = {0};    
+	s_command.Instruction = SEMPER_CMD_READID;
+    s_command.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
     if(flash1->interface_mode == SEMPER_1S_MODE)
     {
 		s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
@@ -71,6 +71,7 @@ semper_status_t Semper_Read_Reg(SEMPER_HandleTypeDef* flash1, uint32_t reg_addr,
 
 	uint8_t rd_buffer[30] = {0}; // Buffer to hold read data
 
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
     if(flash1->interface_mode == SEMPER_1S_MODE)
     {
 		cmd.Instruction = SEMPER_CMD_RDARG;     //RDARG_C_0操作码
@@ -121,11 +122,12 @@ semper_status_t Semper_Read_Reg(SEMPER_HandleTypeDef* flash1, uint32_t reg_addr,
 
 
 semper_status_t Semper_Enter_4Byte_Address_Mode(SEMPER_HandleTypeDef* flash1)
-{
+{	
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
 	
 	cmd.Instruction = SEMPER_CMD_EN4B;  // Ensure this is defined in your header file
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
 		return SEMPER_ERROR;
 	
@@ -141,6 +143,7 @@ semper_status_t Semper_Exit_4Byte_Address_Mode(SEMPER_HandleTypeDef* flash1)
 	XSPI_RegularCmdTypeDef cmd = {0};
 	
 	cmd.Instruction = SEMPER_CMD_EX4B;  // Ensure this is defined in your header file
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
 		return SEMPER_ERROR;
 	
@@ -157,9 +160,9 @@ semper_status_t Semper_Write_Reg(SEMPER_HandleTypeDef* flash1, uint32_t reg_addr
 	
 	// First command: Write Enable
 	Semper_Write_Enable(flash1);
-
 	// Second command: Write Register
 	cmd.Instruction = SEMPER_CMD_WRARG;
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
@@ -209,9 +212,9 @@ semper_status_t Semper_Read_StatusReg1(SEMPER_HandleTypeDef* flash1, uint8_t* st
 	XSPI_RegularCmdTypeDef s_command = {0};
 
     uint32_t dummy_addr = 0x00000000;
-
 	uint8_t rd_buffer[30] = {0}; // Buffer to hold read data
 	
+	s_command.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		s_command.Instruction = SEMPER_CMD_RDSR1;  // Read Status Register 1 command
@@ -295,8 +298,8 @@ semper_status_t Semper_Reset(SEMPER_HandleTypeDef* flash1)
 {
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
-
 	cmd.Instruction = SEMPER_CMD_RESET_EN;  // Enable reset command
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
@@ -313,8 +316,8 @@ semper_status_t Semper_Reset(SEMPER_HandleTypeDef* flash1)
 	cmd.DataMode = HAL_XSPI_DATA_NONE;  // No data for reset command
 	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
 		return SEMPER_ERROR;
-
 	cmd.Instruction = SEMPER_CMD_RESET;  // Execute reset command
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
 		return SEMPER_ERROR;
 
@@ -326,6 +329,7 @@ semper_status_t Semper_Write_Enable(SEMPER_HandleTypeDef* flash1)
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
 
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.Instruction = SEMPER_CMD_WRENB;  // Write Enable command
@@ -408,10 +412,10 @@ semper_status_t Semper_Prog_Page(SEMPER_HandleTypeDef* flash1, uint32_t address,
 	{
 		return SEMPER_ERROR;
 	}
-	
-	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
+		XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
 
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.Instruction = SEMPER_CMD_Prog_Page;  // Page program command
@@ -467,7 +471,7 @@ semper_status_t Semper_Poll_RDYBSY(SEMPER_HandleTypeDef* flash1)
 	return SEMPER_OK;
 }
 
-semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef* flash1, uint32_t address)
+semper_status_t Semper_Erase_Sector_4k(SEMPER_HandleTypeDef* flash1, uint32_t address)
 {
 	if (Semper_Write_Enable(flash1) != SEMPER_OK)
 	{
@@ -477,6 +481,7 @@ semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef* flash1, uint32_t addre
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
 
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.Instruction = SEMPER_CMD_Erase_Sector;  // Sector erase command
@@ -511,6 +516,7 @@ semper_status_t Semper_Clear_Prog_Err_Flag(SEMPER_HandleTypeDef* flash1)
 	XSPI_RegularCmdTypeDef cmd = {0};
 
 	cmd.Instruction = SEMPER_CMD_CLEAR_PROG_ERR_FLAG;  // Clear programming error flag command
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
@@ -537,6 +543,7 @@ semper_status_t Semper_Read_Memory_1S(SEMPER_HandleTypeDef* flash1, uint32_t add
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
 
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.Instruction = SEMPER_CMD_READ;  // Read command
@@ -568,6 +575,7 @@ semper_status_t Semper_Read_Memory_8S(SEMPER_HandleTypeDef* flash1, uint32_t add
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef cmd = {0};
 
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_8S_MODE)
 	{
 		cmd.Instruction = SEMPER_CMD_READ_8S;  // 8S read command
@@ -601,6 +609,7 @@ semper_status_t Semper_Read_Memory(SEMPER_HandleTypeDef* flash1, uint32_t addres
     XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
     XSPI_RegularCmdTypeDef cmd = {0};
 
+    cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
     if(flash1->interface_mode == SEMPER_1S_MODE)
     {
         cmd.Instruction = SEMPER_CMD_READ;  // Read command
@@ -642,7 +651,6 @@ semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef* flash1)
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
 	XSPI_RegularCmdTypeDef s_command = {0};
 	XSPI_MemoryMappedTypeDef s_mem_mapped_cfg = {0};
-
 	s_command.OperationType = HAL_XSPI_OPTYPE_READ_CFG;
 	if (flash1->interface_mode == SEMPER_1S_MODE)
 	{
@@ -704,4 +712,60 @@ semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef* flash1)
 	}
 
 	return SEMPER_OK; 
+}
+
+semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef* flash1, uint32_t EraseStartAddress, uint32_t EraseEndAddress)
+{
+	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
+	XSPI_RegularCmdTypeDef cmd = {0};
+
+	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
+	if(flash1->interface_mode == SEMPER_1S_MODE)
+	{
+		cmd.Instruction = SEMPER_CMD_Erase_Sector;  // Sector erase command
+		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+		cmd.AddressMode = HAL_XSPI_ADDRESS_1_LINE;
+		cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
+	}
+	else if(flash1->interface_mode == SEMPER_8S_MODE)
+	{
+		cmd.Instruction = 0x2121; // 8S sector erase command
+		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
+		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_16_BITS;  // 8S mode uses 16-bit instruction width
+		cmd.AddressMode = HAL_XSPI_ADDRESS_8_LINES;
+		cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
+	}
+	else
+	{
+		return SEMPER_ERROR;
+	}
+
+	cmd.Address = EraseStartAddress;
+
+	while (EraseEndAddress >= EraseStartAddress) {
+		if (Semper_Write_Enable(flash1) != SEMPER_OK)
+		{
+			return SEMPER_ERROR;
+		}
+
+		if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+			return SEMPER_ERROR;
+
+		if(Semper_Poll_RDYBSY(flash1) != SEMPER_OK)
+			return SEMPER_ERROR;
+
+		EraseStartAddress += 0x1000; // Move to the next 4K sector
+		cmd.Address = EraseStartAddress; // Update address for the next sector
+	}
+	return SEMPER_OK;
+}
+
+semper_status_t Semper_DisableMemoryMappedMode(SEMPER_HandleTypeDef* flash1)
+{
+	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
+	if(HAL_XSPI_Abort(hxspi) != HAL_OK)
+	{
+		return SEMPER_ERROR; // Abort failed
+	}
+	return SEMPER_OK; // Successfully disabled memory-mapped mode
 }

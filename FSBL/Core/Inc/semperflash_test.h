@@ -8,7 +8,7 @@
 #ifndef INC_SEMPERFLASH_TEST_H_
 #define INC_SEMPERFLASH_TEST_H_
 
-#define SEMPER_8S_TEST
+//#define SEMPER_8S_TEST
 
 #include "semperflash_drv.h"
 

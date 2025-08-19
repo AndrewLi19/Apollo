@@ -68,9 +68,11 @@ semper_status_t Semper_Enter_4Byte_Address_Mode(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Exit_4Byte_Address_Mode(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Poll_RDYBSY(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Write_Enable(SEMPER_HandleTypeDef*);
-semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef*, uint32_t);
+semper_status_t Semper_Erase_Sector_4k(SEMPER_HandleTypeDef*, uint32_t);
 semper_status_t Semper_Clear_Prog_Err_Flag(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Read_Memory_8S(SEMPER_HandleTypeDef*, uint32_t, uint8_t*, uint32_t);
 semper_status_t Semper_Read_Memory(SEMPER_HandleTypeDef*, uint32_t, uint8_t*, uint32_t);
 semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef*);
+semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef*, uint32_t EraseStartAddress, uint32_t EraseEndAddress);
+semper_status_t Semper_DisableMemoryMappedMode(SEMPER_HandleTypeDef*);
 #endif /* INC_SEMPERFLASH_DRV_H_ */

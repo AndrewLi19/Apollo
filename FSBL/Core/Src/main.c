@@ -24,9 +24,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "semperflash_drv.h"
 #include "semperflash_test.h"
 #include <string.h>
 #define SECTORS_COUNT 100
+#define MEMORY_SECTOR_SIZE 256  // 4KB sector size for SemperFlash
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -85,64 +87,66 @@ int main(void)
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
-
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_XSPI1_Init();
+  
   /* USER CODE BEGIN 2 */
   SEMPER_HandleTypeDef flash1;
-  /* USER CODE END 2 */
+  
+  // Initialize SemperFlash
+  if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK) {
+    while (1); // Initialization failed
+  }
 
+  // Initialize test parameters
+  Semper_Test_Init(&flash1, &hxspi1);
+  /* USER CODE END 2 */
+//  Semper_Poll_RDYBSY(&flash1);
+//  Semper_Memory_Mapped_Mode_Test(&flash1);
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+//  Semper_Prog_Page_Test(&flash1);
+  for(uint32_t i=0;i<SECTORS_COUNT;i++)
   {
-    /* USER CODE END WHILE */
-	/* USER CODE BEGIN 2 */
-
 	uint8_t buffer_test[MEMORY_SECTOR_SIZE];
-	  uint32_t var = 0;
-
-	CSP_QUADSPI_Init();
-
-	for (var = 0; var < MEMORY_SECTOR_SIZE; var++) {
+	for (uint32_t var = 0; var < MEMORY_SECTOR_SIZE; var++) {
 		buffer_test[var] = (var & 0xff);
 	}
 
-	for (var = 0; var < SECTORS_COUNT; var++) {
+	 uint32_t sector_address = 0x00001000*i;
 
-		if (CSP_QSPI_EraseSector(var * MEMORY_SECTOR_SIZE,
-				(var + 1) * MEMORY_SECTOR_SIZE - 1) != HAL_OK) {
+	 if (Semper_Erase_Sector_4k(&flash1, sector_address) != SEMPER_OK) {
+		while (1); // Erase error detected
+	 }
 
-			while (1)
-				;  //breakpoint - error detected
-		}
+	 if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+		while (1);
 
-		if (CSP_QSPI_WriteMemory(buffer_test, var * MEMORY_SECTOR_SIZE,
-				sizeof(buffer_test)) != HAL_OK) {
+	 // Program sector with test data
+	 if (Semper_Prog_Page(&flash1, sector_address, buffer_test, sizeof(buffer_test)) != SEMPER_OK) {
+		while (1); // Program error detected
+	 }
 
-			while (1)
-				;  //breakpoint - error detected
-		}
+	 if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+		while (1);
 
+	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK) {
+		while (1); // Memory mapped mode error detected
 	}
 
-	if (CSP_QSPI_EnableMemoryMappedMode() != HAL_OK) {
-
-		while (1)
-			; //breakpoint - error detected
+	uint32_t read_addr = 0x90000000+sector_address;
+	volatile uint8_t* read_data = (volatile uint8_t*)read_addr;
+	if (memcmp(buffer_test,
+			read_data,
+			MEMORY_SECTOR_SIZE) != 0) {
+		while (1); // Data verification error - flash test failed
 	}
-
-	for (var = 0; var < SECTORS_COUNT; var++) {
-		if (memcmp(buffer_test,
-				(uint8_t*) (0x90000000 + var * MEMORY_SECTOR_SIZE),
-				MEMORY_SECTOR_SIZE) != HAL_OK) {
-			while (1)
-				;  //breakpoint - error detected - otherwise QSPI works properly
-		}
-	}
-
-	/* USER CODE END 2 */
+	Semper_DisableMemoryMappedMode(&flash1);
+  }
+  while (1)
+  {
+    /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
