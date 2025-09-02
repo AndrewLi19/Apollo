@@ -32,7 +32,9 @@
 */
 
 /* Entry Point */
-ENTRY(Reset_Handler)
+ENTRY(Init)
+/* Generate 2 segment for Loader code and device info */
+PHDRS {Loader PT_LOAD ; SgInfo PT_LOAD ; }
 
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM); /* end of "RAM" Ram type memory */
@@ -44,8 +46,7 @@ _Min_Stack_Size = 0x800; /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  ROM    (xrw)    : ORIGIN = 0x34180400,   LENGTH = 255K
-  RAM    (xrw)    : ORIGIN = 0x341C0000,   LENGTH = 256K
+  RAM    (xrw)    : ORIGIN = 0x34180404,   LENGTH = 256K-4
 }
 
 /* Sections */
@@ -54,10 +55,11 @@ SECTIONS
   /* The startup code into "RAM" Ram type memory */
   .isr_vector :
   {
+    . = . + 0x1FC;
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   /* The program code and other data into "RAM" Ram type memory */
   .text :
@@ -73,64 +75,62 @@ SECTIONS
 
     KEEP (*(.init))
     KEEP (*(.fini))
-
+	KEEP(*Loader_Src.o ( .text* ))
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >ROM
+  } >RAM :Loader
 
   /* Constant data into "RAM" Ram type memory */
+  .Dev_info :
+  {
+  	__Dev_info_START = .;
+  	*(.Dev_info*)
+  	KEEP(*(.Dev_info))
+  	__Dev_info_END = .;
+  } >RAM :SgInfo  
+  
   .rodata :
   {
     . = ALIGN(4);
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   .ARM.extab   (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
    {
-    . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-    . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   .ARM (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
    {
-    . = ALIGN(4);
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
-    . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   .preinit_array     (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
-    . = ALIGN(4);
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
-    . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   .init_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
-    . = ALIGN(4);
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
-    . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   .fini_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
-    . = ALIGN(4);
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
-    . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
 
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -146,7 +146,7 @@ SECTIONS
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
 
-  } >RAM AT> ROM
+  } >RAM AT> RAM :Loader
 
   .noncacheable :
   {
@@ -155,7 +155,7 @@ SECTIONS
     KEEP(*(.noncacheable))
     . = ALIGN(8);
     __enoncacheable = .;  /* create symbol for end of section */
-  } > RAM
+  } > RAM :Loader
 
 
   .gnu.sgstubs :
@@ -163,7 +163,7 @@ SECTIONS
     . = ALIGN(4);
     *(.gnu.sgstubs*)   /* Secure Gateway stubs */
     . = ALIGN(4);
-  } >ROM
+  } >RAM :Loader
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
   .bss :
@@ -178,7 +178,7 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >RAM
+  } >RAM :Loader
 
   /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
   ._user_heap_stack :
@@ -189,7 +189,7 @@ SECTIONS
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
-  } >RAM
+  } >RAM :Loader
 
   /* Remove information from the compiler libraries */
   /DISCARD/ :

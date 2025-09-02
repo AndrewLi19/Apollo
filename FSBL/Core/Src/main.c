@@ -92,58 +92,58 @@ int main(void)
   MX_XSPI1_Init();
   
   /* USER CODE BEGIN 2 */
-  SEMPER_HandleTypeDef flash1;
+//  SEMPER_HandleTypeDef flash1;
   
   // Initialize SemperFlash
-  if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK) {
-    while (1); // Initialization failed
-  }
+//  if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK) {
+//    while (1); // Initialization failed
+//  }
 
   // Initialize test parameters
-  Semper_Test_Init(&flash1, &hxspi1);
+//  Semper_Test_Init(&flash1, &hxspi1);
   /* USER CODE END 2 */
 //  Semper_Poll_RDYBSY(&flash1);
 //  Semper_Memory_Mapped_Mode_Test(&flash1);
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 //  Semper_Prog_Page_Test(&flash1);
-  for(uint32_t i=0;i<SECTORS_COUNT;i++)
-  {
-	uint8_t buffer_test[MEMORY_SECTOR_SIZE];
-	for (uint32_t var = 0; var < MEMORY_SECTOR_SIZE; var++) {
-		buffer_test[var] = (var & 0xff);
-	}
+//  for(uint32_t i=0;i<SECTORS_COUNT;i++)
+//  {
+//	uint8_t buffer_test[MEMORY_SECTOR_SIZE];
+//	for (uint32_t var = 0; var < MEMORY_SECTOR_SIZE; var++) {
+//		buffer_test[var] = (var & 0xff);
+//	}
 
-	 uint32_t sector_address = 0x00001000*i;
+//	 uint32_t sector_address = 0x00001000*i;
 
-	 if (Semper_Erase_Sector_4k(&flash1, sector_address) != SEMPER_OK) {
-		while (1); // Erase error detected
-	 }
-
-	 if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
-		while (1);
-
-	 // Program sector with test data
-	 if (Semper_Prog_Page(&flash1, sector_address, buffer_test, sizeof(buffer_test)) != SEMPER_OK) {
-		while (1); // Program error detected
-	 }
-
-	 if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
-		while (1);
-
-	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK) {
-		while (1); // Memory mapped mode error detected
-	}
-
-	uint32_t read_addr = 0x90000000+sector_address;
-	volatile uint8_t* read_data = (volatile uint8_t*)read_addr;
-	if (memcmp(buffer_test,
-			read_data,
-			MEMORY_SECTOR_SIZE) != 0) {
-		while (1); // Data verification error - flash test failed
-	}
-	Semper_DisableMemoryMappedMode(&flash1);
-  }
+//	 if (Semper_Erase_Sector_4k(&flash1, sector_address) != SEMPER_OK) {
+//		while (1); // Erase error detected
+//	 }
+//
+//	 if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+//		while (1);
+//
+//	 // Program sector with test data
+//	 if (Semper_Prog_Page(&flash1, sector_address, buffer_test, sizeof(buffer_test)) != SEMPER_OK) {
+//		while (1); // Program error detected
+//	 }
+//
+//	 if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+//		while (1);
+//
+//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK) {
+//		while (1); // Memory mapped mode error detected
+//	}
+//
+//	uint32_t read_addr = 0x90000000+sector_address;
+//	volatile uint8_t* read_data = (volatile uint8_t*)read_addr;
+//	if (memcmp(buffer_test,
+//			read_data,
+//			MEMORY_SECTOR_SIZE) != 0) {
+//		while (1); // Data verification error - flash test failed
+//	}
+//	Semper_DisableMemoryMappedMode(&flash1);
+//  }
   while (1)
   {
     /* USER CODE END WHILE */
