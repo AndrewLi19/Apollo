@@ -75,21 +75,22 @@ int main(void)
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
-  HAL_Init();
+//  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+//  SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_XSPI1_Init();
+//  MX_GPIO_Init();
+
+//  MX_XSPI1_Init();
   
   /* USER CODE BEGIN 2 */
 //  SEMPER_HandleTypeDef flash1;
