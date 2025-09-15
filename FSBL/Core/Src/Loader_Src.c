@@ -20,14 +20,14 @@ static SEMPER_HandleTypeDef flash1;
  */
 int Init(void) {
 
-//	*(uint32_t*)0xE000EDF0=0xA05F0000; //enable interrupts in debug
-//
-//
-//	SystemInit();
+	*(uint32_t*)0xE000EDF0=0xA05F0000; //enable interrupts in debug
 
-//	SCB->VTOR = 0x341C0000 | 0x200;
 
-//	__set_PRIMASK(0); //enable interrupts
+	SystemInit();
+
+	SCB->VTOR = 0x341C0000 | 0x200;
+
+	__set_PRIMASK(0); //enable interrupts
 
 	HAL_Init();
 
@@ -38,7 +38,7 @@ int Init(void) {
 	__HAL_RCC_XSPI1_FORCE_RESET();  //completely reset peripheral
     __HAL_RCC_XSPI1_RELEASE_RESET();
 	// Initialize XSPI1
-//	MX_XSPI1_Init();
+	MX_XSPI1_Init();
 
 	// Initialize SemperFlash driver using global flash1
 	if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK)
@@ -48,19 +48,19 @@ int Init(void) {
 	}
 
 //	HAL_Delay(100);
-//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
+	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
 
-//	__set_PRIMASK(1); //disable interrupts
+	__set_PRIMASK(1); //disable interrupts
 //	Read(0x90000000, 4, (uint8_t*)&flash1); // Test read
 	return LOADER_OK;
 }
 
-int Read(uint32_t Address, uint32_t Size, uint8_t *Buffer)
-{
+//int Read(uint32_t Address, uint32_t Size, uint8_t *Buffer)
+//{
 //	__set_PRIMASK(0); //enable interrupts
 
 //	MX_XSPI1_Init();
@@ -86,8 +86,8 @@ int Read(uint32_t Address, uint32_t Size, uint8_t *Buffer)
 
 //	memcpy(Buffer, (uint8_t*)Address, Size);
 //	__set_PRIMASK(1); //disable interrupts
-	return LOADER_OK;
-}
+//	return LOADER_OK;
+//}
 
 
 /**
