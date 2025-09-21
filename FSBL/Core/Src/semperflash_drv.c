@@ -742,11 +742,13 @@ semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef* flash1, uint32_t Erase
 
 	cmd.Address = EraseStartAddress;
 
+	if (Semper_Write_Enable(flash1) != SEMPER_OK)
+	{
+		return SEMPER_ERROR;
+	}
+
+
 	while (EraseEndAddress >= EraseStartAddress) {
-		if (Semper_Write_Enable(flash1) != SEMPER_OK)
-		{
-			return SEMPER_ERROR;
-		}
 
 		if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
 			return SEMPER_ERROR;
