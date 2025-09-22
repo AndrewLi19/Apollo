@@ -2,12 +2,14 @@
 #include "main.h"
 #include "gpio.h"
 #include "xspi.h"
+#include <stdbool.h>
 
 #define LOADER_OK	0x1
 #define LOADER_FAIL	0x0
 
 extern void SystemClock_Config(void);
 extern XSPI_HandleTypeDef hxspi1;
+//static bool FirstInit = true;
 
 // Global SemperFlash handle - initialized once in Init() function
 static SEMPER_HandleTypeDef flash1;
@@ -19,9 +21,9 @@ static SEMPER_HandleTypeDef flash1;
  * @retval  LOADER_FAIL = 0	: Operation failed
  */
 int Init(void) {
-
+//	if(FirstInit)
+//	{
 	*(uint32_t*)0xE000EDF0=0xA05F0000; //enable interrupts in debug
-
 
 	SystemInit();
 
@@ -31,12 +33,12 @@ int Init(void) {
 
 	HAL_Init();
 
-    SystemClock_Config();
+	SystemClock_Config();
 
-    MX_GPIO_Init();
+	MX_GPIO_Init();
 
-	__HAL_RCC_XSPI1_FORCE_RESET();  //completely reset peripheral
-    __HAL_RCC_XSPI1_RELEASE_RESET();
+//		__HAL_RCC_XSPI1_FORCE_RESET();  //completely reset peripheral
+//		__HAL_RCC_XSPI1_RELEASE_RESET();
 	// Initialize XSPI1
 //    HAL_XSPI_DeInit(&hxspi1);
 	MX_XSPI1_Init();
@@ -47,7 +49,8 @@ int Init(void) {
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
-
+//		FirstInit = false;
+//	}
 	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
@@ -67,9 +70,6 @@ int Init(void) {
 //int Read(uint32_t Address, uint32_t Size, uint8_t *Buffer)
 //{
 //	__set_PRIMASK(0); //enable interrupts
-
-//	MX_XSPI1_Init();
-//	Semper_Flash_Init(&flash1, &hxspi1);
 
 //	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
 //	{
@@ -146,12 +146,17 @@ int SectorErase(uint32_t EraseStartAddress, uint32_t EraseEndAddress) {
 		return LOADER_FAIL;
 	}
 
-
 	if (Semper_Erase_Sector(&flash1, EraseStartAddress, EraseEndAddress) != SEMPER_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
+
+//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+//	{
+//		__set_PRIMASK(1); //disable interrupts
+//		return LOADER_FAIL;
+//	}
 
 	__set_PRIMASK(1); //disable interrupts
 	return LOADER_OK;
