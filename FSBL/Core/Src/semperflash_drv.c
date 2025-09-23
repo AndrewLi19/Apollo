@@ -716,10 +716,14 @@ semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef* flash1)
 
 semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef* flash1, uint32_t EraseStartAddress, uint32_t EraseEndAddress)
 {
+	if (Semper_Write_Enable(flash1) != SEMPER_OK)
+	{
+		return SEMPER_ERROR;
+	}
 	XSPI_HandleTypeDef* hxspi = flash1->xspi_handler;
+
 	XSPI_RegularCmdTypeDef cmd = {0};
 
-	cmd.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
 	if(flash1->interface_mode == SEMPER_1S_MODE)
 	{
 		cmd.Instruction = SEMPER_CMD_Erase_Sector;  // Sector erase command
@@ -741,12 +745,6 @@ semper_status_t Semper_Erase_Sector(SEMPER_HandleTypeDef* flash1, uint32_t Erase
 	}
 
 	cmd.Address = EraseStartAddress;
-
-	if (Semper_Write_Enable(flash1) != SEMPER_OK)
-	{
-		return SEMPER_ERROR;
-	}
-
 
 	while (EraseEndAddress >= EraseStartAddress) {
 

@@ -27,7 +27,7 @@ int Init(void) {
 
 	SystemInit();
 
-	SCB->VTOR = 0x341C0000 | 0x200;
+	SCB->VTOR = 0x34180600;
 
 	__set_PRIMASK(0); //enable interrupts
 
@@ -56,7 +56,15 @@ int Init(void) {
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
-
+	// 先读取Flash ID确保Flash可以正常通信
+//	uint32_t flash_id = 0;
+//	if (Semper_Read_FlashID(&flash1, &flash_id) != SEMPER_OK)
+//	{
+//		__set_PRIMASK(1); //disable interrupts
+//		return LOADER_FAIL;
+//	}
+//	HAL_Delay(1);
+//	Semper_Erase_Sector(&flash1, 0x00001000, 0x00002000);
 	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
@@ -146,17 +154,17 @@ int SectorErase(uint32_t EraseStartAddress, uint32_t EraseEndAddress) {
 		return LOADER_FAIL;
 	}
 
-	if (Semper_Erase_Sector(&flash1, EraseStartAddress, EraseEndAddress) != SEMPER_OK)
+	if (Semper_Erase_Sector(&flash1, (EraseStartAddress & (0x0fffffff)), (EraseEndAddress & (0x0fffffff))) != SEMPER_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
 
-//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
+	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
 
 	__set_PRIMASK(1); //disable interrupts
 	return LOADER_OK;
