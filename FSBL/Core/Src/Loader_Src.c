@@ -71,6 +71,7 @@ int Init(void) {
 		return LOADER_FAIL;
 	}
 
+//	MassErase();
 	__set_PRIMASK(1); //disable interrupts
 	return LOADER_OK;
 }
@@ -112,8 +113,11 @@ int Init(void) {
  * @retval  LOADER_FAIL = 0	: Operation failed
  */
 int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
+	const uint32_t MAX_PROG_SIZE = 256;
+	uint32_t current_size, current_addr;
+	uint8_t* current_buffer;
 
-	__set_PRIMASK(0); //enable interrupts/
+	__set_PRIMASK(0); //enable interrupts
 
 	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
 	{
@@ -121,10 +125,31 @@ int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
 		return LOADER_FAIL;
 	}
 
-	if (Semper_Prog_Page(&flash1, (Address & (0x0fffffff)),(uint8_t*) buffer,Size) != SEMPER_OK)
+	current_addr = Address & 0x0fffffff;
+	current_buffer = buffer;
+	
+	// Process the data in chunks of MAX_PROG_SIZE
+	while(Size > 0)
 	{
-		__set_PRIMASK(1); //disable interrupts
-		return LOADER_FAIL;
+		// Determine the current chunk size
+		current_size = (Size > MAX_PROG_SIZE) ? MAX_PROG_SIZE : Size;
+		
+		// Program the current chunk
+		if (Semper_Prog_Page(&flash1, current_addr, current_buffer, current_size) != SEMPER_OK)
+		{
+			__set_PRIMASK(1); //disable interrupts
+			return LOADER_FAIL;
+		}
+		
+		if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+		{
+			__set_PRIMASK(1); //disable interrupts
+			return LOADER_FAIL;
+		}
+		// Update pointers and remaining size
+		current_addr += current_size;
+		current_buffer += current_size;
+		Size -= current_size;
 	}
 
 	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
@@ -181,23 +206,66 @@ int SectorErase(uint32_t EraseStartAddress, uint32_t EraseEndAddress) {
  * Note: Optional for all types of device
  */
 int MassErase(void) {
+//	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+	__set_PRIMASK(0); //enable interrupts
+	if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
 
-	// __set_PRIMASK(0); //enable interrupts
+	XSPI_HandleTypeDef* hxspi = (&flash1)->xspi_handler;
 
-	// if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
-	// {
-	// 	__set_PRIMASK(1); //disable interrupts
-	// 	return LOADER_FAIL;
-	// }
+	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
 
+	if (Semper_Write_Enable(&flash1) != SEMPER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
 
-	// if (CSP_QSPI_Erase_Chip() != HAL_OK)
-	// {
-	// 	 __set_PRIMASK(1); //disable interrupts
-	// 	return LOADER_FAIL;
-	// }
+	XSPI_RegularCmdTypeDef cmd = {0};
 
-	// __set_PRIMASK(1); //disable interrupts
+	if((&flash1)->interface_mode == SEMPER_1S_MODE)
+	{
+		cmd.Instruction = 0x60;
+		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
+	}
+	else if((&flash1)->interface_mode == SEMPER_8S_MODE)
+	{
+		cmd.Instruction = 0x6060;
+		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
+		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_16_BITS;  // 8S mode uses 16-bit instruction width
+	}
+	else
+	{
+		__set_PRIMASK(1);
+		return LOADER_FAIL;
+	}
+
+	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+	{
+		__set_PRIMASK(1);
+		return LOADER_FAIL;
+	}
+
+	if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+	{
+		__set_PRIMASK(1);
+		return LOADER_FAIL;
+	}
+
+	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+	__set_PRIMASK(1); //disable interrupts
 	return LOADER_OK;
 }
 
@@ -291,6 +359,11 @@ uint64_t Verify(uint32_t MemoryAddr, uint32_t RAMBufferAddr, uint32_t Size,uint3
 	uint32_t VerifiedData = 0, InitVal = 0;
 	uint64_t checksum;
 	Size *= 4;
+	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
 
 	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
 	{
@@ -301,11 +374,18 @@ uint64_t Verify(uint32_t MemoryAddr, uint32_t RAMBufferAddr, uint32_t Size,uint3
 	checksum = CheckSum((uint32_t) MemoryAddr + (missalignement & 0xf),
 			Size - ((missalignement >> 16) & 0xF), InitVal);
 	while (Size > VerifiedData) {
-		if (*(uint8_t*) MemoryAddr++
-				!= *((uint8_t*) RAMBufferAddr + VerifiedData)){
-			__set_PRIMASK(1); //disable interrupts
-			return ((checksum << 32) + (MemoryAddr + VerifiedData));
+		uint32_t current_addr = MemoryAddr;
+		if (*(uint8_t*) current_addr != *((uint8_t*) RAMBufferAddr + VerifiedData)){
+		     return ((checksum << 32) + current_addr); // 返回真实的失败地址
 		}
+		MemoryAddr++;
+		VerifiedData++;
+
+//		if (*(uint8_t*) MemoryAddr++
+//				!= *((uint8_t*) RAMBufferAddr + VerifiedData)){
+//			__set_PRIMASK(1); //disable interrupts
+//			return ((checksum << 32) + (MemoryAddr + VerifiedData));
+//		}
 		VerifiedData++;
 	}
 

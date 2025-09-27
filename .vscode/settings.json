@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "semperflash_drv.h": "c",
-        "semperflash_test.h": "c"
-    }
-}
