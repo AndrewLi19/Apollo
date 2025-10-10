@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "micron_test.h"
+#include "unity_fixture.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,6 +60,10 @@ static void MX_XSPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void RunAllTests (void)
+{
+	RUN_TEST_GROUP(MT25QU02_Driver);
+}
 
 /* USER CODE END 0 */
 
@@ -94,10 +98,13 @@ int main(void)
   MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
 
-  UNITY_BEGIN();
-  RUN_TEST(test_MT25QU02_ReadID);
-  RUN_TEST(test_MT25QU02_ReadMemory);
-  UNITY_END();
+  int argc;
+  char * argv;
+  UnityMain(argc, argv, RunAllTests);
+  // UNITY_BEGIN();
+  // RUN_TEST(test_MT25QU02_ReadID);
+  // RUN_TEST(test_MT25QU02_ReadMemory);
+  // UNITY_END();
   /* USER CODE END 2 */
 
   /* Infinite loop */

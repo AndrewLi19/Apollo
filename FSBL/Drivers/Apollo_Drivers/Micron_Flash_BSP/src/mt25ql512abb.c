@@ -173,6 +173,7 @@ int32_t MT25QU02_ReadSTR(uint8_t *pData, uint32_t ReadAddr, uint32_t Size)
 
   /* Initialize the read command */
   s_command.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
+  s_command.IOSelect = HAL_XSPI_SELECT_IO_3_0;
   s_command.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
   s_command.AddressWidth = (AddressSize == MT25QU02_3BYTES_SIZE) ? HAL_XSPI_ADDRESS_24_BITS : HAL_XSPI_ADDRESS_32_BITS;
   s_command.Address = ReadAddr;
