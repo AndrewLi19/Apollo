@@ -10,7 +10,7 @@
 
 //#define SEMPER_8S_TEST
 
-#include "semperflash_drv.h"
+#include "../../Drivers/Apollo_Drivers/Semper_Flash_BSP/Inc/semperflash_drv.h"
 
 void Semper_Test_Init(SEMPER_HandleTypeDef* flash1, XSPI_HandleTypeDef* hxspi);
 void Semper_Read_Reg_Test(SEMPER_HandleTypeDef* flash1);

@@ -338,7 +338,6 @@ typedef struct{
   MT25QU02_DualFlash_t    dual_flash;
 } MT25QU02_HandleTypeDef;
 
-MT25QU02_HandleTypeDef MT25QU02_Dev;
 /**
   * @}
   */
@@ -357,7 +356,7 @@ int32_t MT25QU02_Init(void);
 // int32_t MT25QU02_AutoPollingMemReady(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_DualFlash_t DualFlash);
 
 // /* Read/Write Array Commands **************************************************/
-// int32_t MT25QU02_ReadSTR(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint8_t *pData, uint32_t ReadAddr, uint32_t Size);
+ int32_t MT25QU02_ReadSTR(uint8_t *pData, uint32_t ReadAddr, uint32_t Size);
 // int32_t MT25QU02_ReadDTR(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint8_t *pData, uint32_t ReadAddr, uint32_t Size);
 // int32_t MT25QU02_PageProgram(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint8_t *pData, uint32_t WriteAddr, uint32_t Size);
 // int32_t MT25QU02_BlockErase(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint32_t BlockAddress, MT25QU02_Erase_t BlockSize);

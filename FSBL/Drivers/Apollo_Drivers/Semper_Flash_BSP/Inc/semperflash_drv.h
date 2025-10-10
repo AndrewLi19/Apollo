@@ -5,8 +5,8 @@
  *      Author: Li YunFan
  */
 
-#ifndef INC_SEMPERFLASH_DRV_H_
-#define INC_SEMPERFLASH_DRV_H_
+#ifndef APOLLO_DRIVERS_SEMPER_FLASH_BSP_INC_SEMPERFLASH_DRV_H_
+#define APOLLO_DRIVERS_SEMPER_FLASH_BSP_INC_SEMPERFLASH_DRV_H_
 #include "stm32n6xx_hal.h"
 
 #define XSPI_TIMEOUT 1000
@@ -73,4 +73,4 @@ semper_status_t Semper_Clear_Prog_Err_Flag(SEMPER_HandleTypeDef*);
 semper_status_t Semper_Read_Memory_8S(SEMPER_HandleTypeDef*, uint32_t, uint8_t*, uint32_t);
 semper_status_t Semper_Read_Memory(SEMPER_HandleTypeDef*, uint32_t, uint8_t*, uint32_t);
 semper_status_t Semper_EnableMemoryMappedMode(SEMPER_HandleTypeDef*);
-#endif /* INC_SEMPERFLASH_DRV_H_ */
+#endif /* APOLLO_DRIVERS_SEMPER_FLASH_BSP_INC_SEMPERFLASH_DRV_H_ */

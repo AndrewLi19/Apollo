@@ -5,7 +5,7 @@
  *      Author: Li YunFan
  */
 
-#include <semperflash_drv.h>
+#include "../Inc/semperflash_drv.h"
 
 semper_status_t Semper_Flash_Init(SEMPER_HandleTypeDef* flash1,XSPI_HandleTypeDef* hxspi)
 {
