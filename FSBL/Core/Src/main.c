@@ -98,13 +98,9 @@ int main(void)
   MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
 
-  int argc;
+  int argc = 0;
   char * argv;
   UnityMain(argc, argv, RunAllTests);
-  // UNITY_BEGIN();
-  // RUN_TEST(test_MT25QU02_ReadID);
-  // RUN_TEST(test_MT25QU02_ReadMemory);
-  // UNITY_END();
   /* USER CODE END 2 */
 
   /* Infinite loop */

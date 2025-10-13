@@ -356,16 +356,16 @@ int32_t MT25QU02_Init(void);
 // int32_t MT25QU02_AutoPollingMemReady(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_DualFlash_t DualFlash);
 
 // /* Read/Write Array Commands **************************************************/
- int32_t MT25QU02_ReadSTR(uint8_t *pData, uint32_t ReadAddr, uint32_t Size);
+int32_t MT25QU02_ReadSTR(uint8_t *pData, uint32_t ReadAddr, uint32_t Size);
 // int32_t MT25QU02_ReadDTR(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint8_t *pData, uint32_t ReadAddr, uint32_t Size);
-// int32_t MT25QU02_PageProgram(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint8_t *pData, uint32_t WriteAddr, uint32_t Size);
-// int32_t MT25QU02_BlockErase(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize, uint32_t BlockAddress, MT25QU02_Erase_t BlockSize);
+int32_t MT25QU02_PageProgram(uint8_t *pData, uint32_t WriteAddr, uint32_t Size);
+int32_t MT25QU02_BlockErase(uint32_t BlockAddress, MT25QU02_Erase_t BlockSize);
 // int32_t MT25QU02_ChipErase(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode);
 // int32_t MT25QU02_EnableMemoryMappedModeSTR(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize);
 // int32_t MT25QU02_EnableMemoryMappedModeDTR(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_AddressSize_t AddressSize);
 
 // /* Register/Setting Commands **************************************************/
-// int32_t MT25QU02_WriteEnable(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_DualFlash_t DualFlash);
+int32_t MT25QU02_WriteEnable(void);
 // int32_t MT25QU02_WriteDisable(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode);
 // int32_t MT25QU02_ReadStatusRegister(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_DualFlash_t DualFlash, uint8_t *Value);
 // int32_t MT25QU02_ReadEnhancedVolCfgRegister(QSPI_HandleTypeDef *Ctx, MT25QU02_Interface_t Mode, MT25QU02_DualFlash_t DualFlash, uint8_t *Value);
