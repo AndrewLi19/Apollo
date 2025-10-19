@@ -62,7 +62,8 @@ static void MX_XSPI2_Init(void);
 /* USER CODE BEGIN 0 */
 static void RunAllTests (void)
 {
-	RUN_TEST_GROUP(MT25QU02_Driver);
+  RUN_TEST_GROUP(MT25QU02_1_1_1_MODE);
+//  RUN_TEST_GROUP(MT25QU02_4_4_4_MODE);
 }
 
 /* USER CODE END 0 */

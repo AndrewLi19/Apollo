@@ -8,7 +8,6 @@
 /* 辅助函数：从 flash 读取并与期望缓冲区比较 */
 static void verify_memory_equals(uint32_t addr, const uint8_t *expected, uint32_t len)
 {
-	/* 使用可变长度数组临时存放读取数据 */
 	uint8_t buf[len];
 	int32_t status = MT25QU02_ReadSTR(buf, addr, len);
 	if (status != MT25QU02_OK) {
@@ -48,15 +47,31 @@ static void verify_memory_filled(uint32_t addr, uint8_t value, uint32_t len)
 	}
 }
 
-TEST_GROUP(MT25QU02_Driver);
-
-TEST_SETUP(MT25QU02_Driver) {
+/* --- 辅助函数：写一页并等待完成 --- */
+static void program_page_and_wait(uint32_t addr, const uint8_t *data, uint32_t len)
+{
+	if (MT25QU02_WriteEnable() != MT25QU02_OK) {
+		TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
+	}
+	/* MT25QU02_PageProgram 接受非 const 指针，强制转换 */
+	if (MT25QU02_PageProgram((uint8_t *)data, addr, len) != MT25QU02_OK) {
+		TEST_FAIL_MESSAGE("MT25QU02_PageProgram failed");
+	}
+	if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) {
+		TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
+	}
 }
 
-TEST_TEAR_DOWN(MT25QU02_Driver) {
+/* --- 辅助函数：在多个地址写入相同数据并等待完成 --- */
+static void program_multiple_pages(const uint32_t addrs[], uint32_t count, const uint8_t *data, uint32_t len)
+{
+	for (uint32_t i = 0; i < count; i++) {
+		program_page_and_wait(addrs[i], data, len);
+	}
 }
 
-TEST(MT25QU02_Driver, TEST_MT25QU02_ReadID) {
+static void ut_read_id(void)
+{
     MT25QU02_Init();
     uint8_t id[3] = {0, 0, 0};
     MT25QU02_ReadID(&id[0]);
@@ -65,43 +80,126 @@ TEST(MT25QU02_Driver, TEST_MT25QU02_ReadID) {
     TEST_ASSERT_EQUAL_UINT8(0x22, id[2]); // Capacity
 }
 
-TEST(MT25QU02_Driver,TEST_MT25QU02_ReadMemory){
+static void ut_read_memory_erase_then_verify(uint32_t addr, uint32_t size)
+{
     MT25QU02_Init();
-    uint8_t read_data[256] = {0};
-    uint32_t read_address = 0x000000;
-    uint32_t read_size = sizeof(read_data);
-    int32_t status = MT25QU02_ReadSTR(read_data, read_address, read_size);
+
+    MT25QU02_WriteEnable();
+    MT25QU02_BlockErase(addr, MT25QU02_SUBSECTOR_4K);
+    MT25QU02_AutoPollingMemReady();
+
+    uint8_t read_data[size];
+    int32_t status = MT25QU02_ReadSTR(read_data, addr, size);
     TEST_ASSERT_EQUAL_INT32(MT25QU02_OK, status);
-    for(uint32_t i = 0; i < read_size; i++) {
+    for(uint32_t i = 0; i < size; i++) {
     	TEST_ASSERT_EQUAL_UINT8(0xFF, read_data[i]);
     }
 }
 
-TEST(MT25QU02_Driver, TEST_MT25QU02_WriteMemory) {
+static void ut_write_memory_and_verify(uint32_t addr, const uint8_t *data, uint32_t size)
+{
     MT25QU02_Init();
-    uint8_t write_data[256];
-    for(uint32_t i = 0; i < sizeof(write_data); i++) {
-        write_data[i] = (uint8_t)i;
-    }
-    uint32_t write_address = 0x000000;
-    uint32_t write_size = sizeof(write_data);
 
     if(MT25QU02_WriteEnable() != MT25QU02_OK) {
         TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
     }
-    if(MT25QU02_PageProgram(write_data, write_address, write_size) != MT25QU02_OK) {
+    if(MT25QU02_PageProgram((uint8_t*)data, addr, size) != MT25QU02_OK) {
         TEST_FAIL_MESSAGE("MT25QU02_PageProgram failed");
     }
     if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) {
         TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
     }
 
-    // Read back the data to verify
-    uint8_t read_data[256] = {0};
-    int32_t status = MT25QU02_ReadSTR(read_data, write_address, write_size);
+    uint8_t read_data[size];
+    int32_t status = MT25QU02_ReadSTR(read_data, addr, size);
     TEST_ASSERT_EQUAL_INT32(MT25QU02_OK, status);
-    for(uint32_t i = 0; i < write_size; i++) {
-        TEST_ASSERT_EQUAL_UINT8(write_data[i], read_data[i]);
+    for(uint32_t i = 0; i < size; i++) {
+        TEST_ASSERT_EQUAL_UINT8(data[i], read_data[i]);
+    }
+}
+
+static void ut_erase_NK_and_verify(uint32_t base, MT25QU02_Erase_t erase_type)
+{
+    MT25QU02_Init();
+    const uint32_t write_size = TEST_MT25QU02_ERASE_WRITE_SIZE;
+    uint8_t write_data[TEST_MT25QU02_ERASE_WRITE_SIZE];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+
+    uint32_t a1 = base;
+    uint32_t a2 = base - write_size;
+    uint32_t a4 = base + ((erase_type == MT25QU02_ERASE_64K) ? 0x10000 : (erase_type == MT25QU02_ERASE_32K) ? 0x8000 : (erase_type == MT25QU02_ERASE_4K) ? 0x1000 : 0);
+    uint32_t a3 = a4 - write_size;
+
+    const uint32_t addrs[] = { a1, a2, a3, a4 };
+    program_multiple_pages(addrs, 4, write_data, write_size);
+
+    verify_memory_equals(a1, write_data, write_size);
+    verify_memory_equals(a2, write_data, write_size);
+    verify_memory_equals(a3, write_data, write_size);
+    verify_memory_equals(a4, write_data, write_size);
+
+    if (MT25QU02_WriteEnable() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
+    if (MT25QU02_BlockErase(base, erase_type) != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_BlockErase failed");
+    if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
+
+    /* 保持 a2, a4 为对比，a1, a3 应被擦除 */
+    verify_memory_filled(a1, 0xFF, write_size);
+    verify_memory_equals(a2, write_data, write_size);
+    verify_memory_filled(a3, 0xFF, write_size);
+    verify_memory_equals(a4, write_data, write_size);
+
+    /* 清理边界块 */
+    MT25QU02_WriteEnable();
+    MT25QU02_BlockErase(a2, MT25QU02_SUBSECTOR_4K);
+    MT25QU02_AutoPollingMemReady();
+    MT25QU02_WriteEnable();
+    MT25QU02_BlockErase(a4, MT25QU02_SUBSECTOR_4K);
+    MT25QU02_AutoPollingMemReady();
+}
+
+static void ut_chip_erase_and_verify(void)
+{
+    MT25QU02_Init();
+
+    const uint32_t write_size = TEST_MT25QU02_ERASE_WRITE_SIZE;
+    uint8_t write_data[TEST_MT25QU02_ERASE_WRITE_SIZE];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+
+    uint32_t a1 = 0x000000;
+    uint32_t a2 = 0x010000;
+    uint32_t a3 = 0x020000;
+    const uint32_t addrs[] = { a1, a2, a3 };
+    program_multiple_pages(addrs, 3, write_data, write_size);
+
+    verify_memory_equals(a1, write_data, write_size);
+    verify_memory_equals(a2, write_data, write_size);
+    verify_memory_equals(a3, write_data, write_size);
+
+    if (MT25QU02_WriteEnable() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
+    if (MT25QU02_ChipErase() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_ChipErase failed");
+    if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
+
+    verify_memory_filled(a1, 0xFF, write_size);
+    verify_memory_filled(a2, 0xFF, write_size);
+    verify_memory_filled(a3, 0xFF, write_size);
+}
+
+static void ut_memory_mapped_read_verify(uint32_t write_address, const uint8_t *data, uint32_t size)
+{
+    MT25QU02_Init();
+
+    MT25QU02_WriteEnable();
+    MT25QU02_BlockErase(write_address, MT25QU02_SUBSECTOR_4K);
+    MT25QU02_AutoPollingMemReady();
+
+    if(MT25QU02_WriteEnable() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
+    if(MT25QU02_PageProgram((uint8_t*)data, write_address, size) != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_PageProgram failed");
+    if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
+    if(MT25QU02_EnableMemoryMappedModeSTR() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_EnableMemoryMappedModeSTR failed");
+
+    uint8_t *mem_mapped_ptr = (uint8_t *)0x70000000;
+    for(uint32_t i = 0; i < size; i++) {
+        TEST_ASSERT_EQUAL_UINT8(data[i], mem_mapped_ptr[write_address + i]);
     }
 
     MT25QU02_WriteEnable();
@@ -109,64 +207,78 @@ TEST(MT25QU02_Driver, TEST_MT25QU02_WriteMemory) {
     MT25QU02_AutoPollingMemReady();
 }
 
-TEST(MT25QU02_Driver, TEST_MT25QU02_Erase4K){
+static void ut_enter_qpi_mode_and_verify(void)
+{
     MT25QU02_Init();
-
-    uint32_t write_size = TEST_MT25QU02_ERASE_WRITE_SIZE;
-    uint8_t write_data[TEST_MT25QU02_ERASE_WRITE_SIZE];
-    for(uint32_t i = 0; i < sizeof(write_data); i++) {
-        write_data[i] = (uint8_t)i;
-    }
-    uint32_t write_address = 0x000000;
-
-    MT25QU02_WriteEnable();
-    MT25QU02_PageProgram(write_data, write_address, write_size);
-    MT25QU02_AutoPollingMemReady();
-
-    uint32_t write_address_2 = 0x000100;
-    MT25QU02_WriteEnable();
-    MT25QU02_PageProgram(write_data, write_address_2, write_size);
-    MT25QU02_AutoPollingMemReady();
-
-    uint32_t write_address_3 = 0x001000 - write_size;
-    MT25QU02_WriteEnable();
-    MT25QU02_PageProgram(write_data, write_address_3, write_size);
-    MT25QU02_AutoPollingMemReady();
-
-    uint32_t write_address_4 = 0x001000;
-    MT25QU02_WriteEnable();
-    MT25QU02_PageProgram(write_data, write_address_4, write_size);
-    MT25QU02_AutoPollingMemReady();
-
-    verify_memory_equals(write_address, write_data, write_size);
-    verify_memory_equals(write_address_2, write_data, write_size);
-    verify_memory_equals(write_address_3, write_data, write_size);
-    verify_memory_equals(write_address_4, write_data, write_size);
-
-    // Erase 4K sector
-    if(MT25QU02_WriteEnable() != MT25QU02_OK) {
-        TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
-    }
-    if(MT25QU02_BlockErase(write_address, MT25QU02_SUBSECTOR_4K) != MT25QU02_OK) {
-        TEST_FAIL_MESSAGE("MT25QU02_BlockErase failed");
-    }
-    if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) {
-        TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
-    }
-
-    // Read back the data to verify it's erased
-    verify_memory_filled(write_address, 0xFF, write_size);
-    verify_memory_filled(write_address_2, 0xFF, write_size);
-    verify_memory_filled(write_address_3, 0xFF, write_size);
-    verify_memory_equals(write_address_4, write_data, write_size);
-
-    MT25QU02_WriteEnable();
-    MT25QU02_BlockErase(write_address_3, MT25QU02_SUBSECTOR_4K);
+    if(MT25QU02_EnterQPIMode() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_EnterQPIMode failed");
+    ut_read_id();
 }
 
-TEST_GROUP_RUNNER(MT25QU02_Driver) {
-   RUN_TEST_CASE(MT25QU02_Driver, TEST_MT25QU02_ReadID);
-   RUN_TEST_CASE(MT25QU02_Driver, TEST_MT25QU02_ReadMemory);
-   RUN_TEST_CASE(MT25QU02_Driver, TEST_MT25QU02_WriteMemory);
-   RUN_TEST_CASE(MT25QU02_Driver, TEST_MT25QU02_Erase4K);
+static void ut_exit_qpi_mode_and_verify(void)
+{
+    MT25QU02_Init();
+    if(MT25QU02_ExitQPIMode() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_ExitQPIMode failed");
+    ut_read_id();
+}
+
+/* --- SPI 模式测试组 --- */
+TEST_GROUP(MT25QU02_1_1_1_MODE);
+TEST_SETUP(MT25QU02_1_1_1_MODE) {}
+TEST_TEAR_DOWN(MT25QU02_1_1_1_MODE) {}
+
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadID) { ut_read_id(); }
+TEST(MT25QU02_1_1_1_MODE,TEST_MT25QU02_ReadMemory){ ut_read_memory_erase_then_verify(0x000000, 256); }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_WriteMemory) {
+    uint8_t write_data[256];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_write_memory_and_verify(0x000000, write_data, sizeof(write_data));
+}
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase4K){ ut_erase_NK_and_verify(0x001000, MT25QU02_ERASE_4K); }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase32K){ ut_erase_NK_and_verify(0x010000, MT25QU02_ERASE_32K); }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase64K){ ut_erase_NK_and_verify(0x020000, MT25QU02_ERASE_64K); }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ChipErase){ ut_chip_erase_and_verify(); }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead){
+    uint8_t write_data[64];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_memory_mapped_read_verify(0x001000, write_data, sizeof(write_data));
+}
+
+TEST_GROUP_RUNNER(MT25QU02_1_1_1_MODE) {
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadID);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadMemory);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_WriteMemory);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase4K);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase32K);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase64K);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ChipErase);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead);
+}
+
+/* --- QSPI 模式测试组 --- */
+TEST_GROUP(MT25QU02_4_4_4_MODE);
+TEST_SETUP(MT25QU02_4_4_4_MODE) {}
+TEST_TEAR_DOWN(MT25QU02_4_4_4_MODE) {}
+
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI) { ut_enter_qpi_mode_and_verify(); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI) { ut_exit_qpi_mode_and_verify(); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadID) { ut_read_id(); }
+TEST(MT25QU02_4_4_4_MODE,TEST_MT25QU02_ReadMemory){ ut_read_memory_erase_then_verify(0x000000, 256); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_WriteMemory) {
+    uint8_t write_data[256];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_write_memory_and_verify(0x000000, write_data, sizeof(write_data));
+}
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase4K){ ut_erase_NK_and_verify(0x001000, MT25QU02_ERASE_4K); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase32K){ ut_erase_NK_and_verify(0x010000, MT25QU02_ERASE_32K); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase64K){ ut_erase_NK_and_verify(0x020000, MT25QU02_ERASE_64K); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ChipErase){ ut_chip_erase_and_verify(); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedRead){
+    uint8_t write_data[64];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_memory_mapped_read_verify(0x001000, write_data, sizeof(write_data));
+}
+
+TEST_GROUP_RUNNER(MT25QU02_4_4_4_MODE) {
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI);//一定要执行这个用例
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI);//一定要最后执行这个用例
 }
