@@ -1252,36 +1252,44 @@ int32_t MT25QU02_ReadID(uint8_t *ID)
   MT25QU02_Interface_t Mode = MT25QU02_Dev.interface_mode;
   MT25QU02_DualFlash_t DualFlash = MT25QU02_Dev.dual_flash;
 
-  XSPI_RegularCmdTypeDef s_command;
+  /* zero-init to avoid uninitialized fields and set common defaults (align other functions) */
+  XSPI_RegularCmdTypeDef s_command = {0};
 
-  /* Initialize the read ID command */
-  s_command.OperationType     = HAL_XSPI_OPTYPE_COMMON_CFG;
-  s_command.InstructionMode   = (Mode == MT25QU02_QPI_MODE) ? HAL_XSPI_INSTRUCTION_4_LINES : (Mode == MT25QU02_DPI_MODE) ? HAL_XSPI_INSTRUCTION_2_LINES : HAL_XSPI_INSTRUCTION_1_LINE;
-  s_command.Instruction       = ((Mode == MT25QU02_QPI_MODE) || (Mode == MT25QU02_DPI_MODE)) ? MT25QU02_MULTIPLE_IO_READ_ID_CMD : MT25QU02_READ_ID_CMD;
-  s_command.InstructionWidth  = HAL_XSPI_INSTRUCTION_8_BITS;
-  s_command.AddressMode       = HAL_XSPI_ADDRESS_NONE;
+  s_command.OperationType      = HAL_XSPI_OPTYPE_COMMON_CFG;
+  s_command.IOSelect           = HAL_XSPI_SELECT_IO_3_0;
+  s_command.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+  s_command.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
+  s_command.InstructionMode    = (Mode == MT25QU02_QPI_MODE) ? HAL_XSPI_INSTRUCTION_4_LINES :
+                                 (Mode == MT25QU02_DPI_MODE) ? HAL_XSPI_INSTRUCTION_2_LINES :
+                                 HAL_XSPI_INSTRUCTION_1_LINE;
+  s_command.Instruction        = ((Mode == MT25QU02_QPI_MODE) || (Mode == MT25QU02_DPI_MODE)) ? MT25QU02_MULTIPLE_IO_READ_ID_CMD : MT25QU02_READ_ID_CMD;
+  s_command.AddressMode        = HAL_XSPI_ADDRESS_NONE;
+  s_command.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_DISABLE;
+  s_command.AlternateBytes     = 0;
   s_command.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
-  s_command.DummyCycles       = 0;
-  s_command.DataMode          = (Mode == MT25QU02_QPI_MODE) ? HAL_XSPI_DATA_4_LINES : (Mode == MT25QU02_DPI_MODE) ? HAL_XSPI_DATA_2_LINES : HAL_XSPI_DATA_1_LINE;
+  s_command.AlternateBytesWidth= 0;
+  s_command.AlternateBytesDTRMode = 0;
+  s_command.DummyCycles        = 0;
+  s_command.DataMode           = (Mode == MT25QU02_QPI_MODE) ? HAL_XSPI_DATA_4_LINES :
+                                 (Mode == MT25QU02_DPI_MODE) ? HAL_XSPI_DATA_2_LINES :
+                                 HAL_XSPI_DATA_1_LINE;
   s_command.DataLength        = 3;
-//  s_command.NbData            = (DualFlash == MT25QU02_DUALFLASH_ENABLE) ? 6U : 3U;
-//  s_command.DdrMode           = HAL_XSPI_DDR_MODE_DISABLE;
-//  s_command.DdrHoldHalfCycle  = HAL_XSPI_DDR_HHC_ANALOG_DELAY;
-//  s_command.SIOOMode          = XSPI_SIOO_INST_EVERY_CMD;
+  s_command.DataDTRMode       = HAL_XSPI_DATA_DTR_DISABLE;
+  s_command.DQSMode           = HAL_XSPI_DQS_DISABLE;
 
-  /* Configure the command */
-  if (HAL_XSPI_Command(Ctx, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-  {
-    return MT25QU02_ERROR;
-  }
-
-  /* Reception of the data */
-  if (HAL_XSPI_Receive(Ctx, ID, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-  {
-    return MT25QU02_ERROR;
-  }
-
-  return MT25QU02_OK;
+   /* Configure the command */
+   if (HAL_XSPI_Command(Ctx, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+   {
+     return MT25QU02_ERROR;
+   }
+ 
+   /* Reception of the data */
+   if (HAL_XSPI_Receive(Ctx, ID, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+   {
+     return MT25QU02_ERROR;
+   }
+ 
+   return MT25QU02_OK;
 }
 
 // /* Reset Commands *************************************************************/
@@ -1346,7 +1354,6 @@ int32_t MT25QU02_ReadID(uint8_t *ID)
 
 //   return MT25QU02_OK;
 // }
-
 /**
   * @}
   */

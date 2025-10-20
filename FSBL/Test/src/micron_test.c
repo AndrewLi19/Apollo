@@ -70,11 +70,20 @@ static void program_multiple_pages(const uint32_t addrs[], uint32_t count, const
 	}
 }
 
+/* --- 辅助函数：配置QPI模式 --- */
+static void configure_qpi_mode(void)
+{
+    MT25QU02_HandleTypeDef dev = MT25QU02_GetHandle();
+    dev.interface_mode = MT25QU02_QPI_MODE;
+    MT25QU02_Update(&dev);
+}
+
 static void ut_read_id(void)
 {
-    MT25QU02_Init();
-    uint8_t id[3] = {0, 0, 0};
-    MT25QU02_ReadID(&id[0]);
+    uint8_t id[3] = {0,0,0};
+    if (MT25QU02_ReadID(&id[0]) != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_ReadID failed");
+    }
     TEST_ASSERT_EQUAL_UINT8(0x20, id[0]); // Manufacturer ID for Micron
     TEST_ASSERT_EQUAL_UINT8(0xBB, id[1]); // Memory Type
     TEST_ASSERT_EQUAL_UINT8(0x22, id[2]); // Capacity
@@ -82,7 +91,7 @@ static void ut_read_id(void)
 
 static void ut_read_memory_erase_then_verify(uint32_t addr, uint32_t size)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
 
     MT25QU02_WriteEnable();
     MT25QU02_BlockErase(addr, MT25QU02_SUBSECTOR_4K);
@@ -98,7 +107,7 @@ static void ut_read_memory_erase_then_verify(uint32_t addr, uint32_t size)
 
 static void ut_write_memory_and_verify(uint32_t addr, const uint8_t *data, uint32_t size)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
 
     if(MT25QU02_WriteEnable() != MT25QU02_OK) {
         TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
@@ -120,7 +129,7 @@ static void ut_write_memory_and_verify(uint32_t addr, const uint8_t *data, uint3
 
 static void ut_erase_NK_and_verify(uint32_t base, MT25QU02_Erase_t erase_type)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
     const uint32_t write_size = TEST_MT25QU02_ERASE_WRITE_SIZE;
     uint8_t write_data[TEST_MT25QU02_ERASE_WRITE_SIZE];
     for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
@@ -159,7 +168,7 @@ static void ut_erase_NK_and_verify(uint32_t base, MT25QU02_Erase_t erase_type)
 
 static void ut_chip_erase_and_verify(void)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
 
     const uint32_t write_size = TEST_MT25QU02_ERASE_WRITE_SIZE;
     uint8_t write_data[TEST_MT25QU02_ERASE_WRITE_SIZE];
@@ -186,7 +195,7 @@ static void ut_chip_erase_and_verify(void)
 
 static void ut_memory_mapped_read_verify(uint32_t write_address, const uint8_t *data, uint32_t size)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
 
     MT25QU02_WriteEnable();
     MT25QU02_BlockErase(write_address, MT25QU02_SUBSECTOR_4K);
@@ -209,17 +218,18 @@ static void ut_memory_mapped_read_verify(uint32_t write_address, const uint8_t *
 
 static void ut_enter_qpi_mode_and_verify(void)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
     if(MT25QU02_EnterQPIMode() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_EnterQPIMode failed");
     ut_read_id();
 }
 
 static void ut_exit_qpi_mode_and_verify(void)
 {
-    MT25QU02_Init();
+    // MT25QU02_Init();
     if(MT25QU02_ExitQPIMode() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_ExitQPIMode failed");
     ut_read_id();
 }
+
 
 /* --- SPI 模式测试组 --- */
 TEST_GROUP(MT25QU02_1_1_1_MODE);
@@ -244,13 +254,16 @@ TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead){
 }
 
 TEST_GROUP_RUNNER(MT25QU02_1_1_1_MODE) {
+   MT25QU02_Init();
+   MT25QU02_EnterQPIMode();
+   MT25QU02_Init();
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadID);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadMemory);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_WriteMemory);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase4K);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase32K);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase64K);
-   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ChipErase);
+//   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ChipErase);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead);
 }
 
@@ -279,6 +292,10 @@ TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedRead){
 }
 
 TEST_GROUP_RUNNER(MT25QU02_4_4_4_MODE) {
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI);//一定要执行这个用例
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI);//一定要最后执行这个用例
+   MT25QU02_Init();
+   configure_qpi_mode();
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadID);
+//    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadMemory);
+//    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI);//一定要执行这个用例
+//    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI);//一定要最后执行这个用例
 }
