@@ -98,6 +98,7 @@ static void ut_read_memory_erase_then_verify(uint32_t addr, uint32_t size)
     MT25QU02_AutoPollingMemReady();
 
     uint8_t read_data[size];
+    for(uint32_t i = 0; i < size; i++) read_data[i] = 0;
     int32_t status = MT25QU02_ReadSTR(read_data, addr, size);
     TEST_ASSERT_EQUAL_INT32(MT25QU02_OK, status);
     for(uint32_t i = 0; i < size; i++) {
@@ -120,6 +121,7 @@ static void ut_write_memory_and_verify(uint32_t addr, const uint8_t *data, uint3
     }
 
     uint8_t read_data[size];
+    for(uint32_t i = 0; i < size; i++) read_data[i] = 0;
     int32_t status = MT25QU02_ReadSTR(read_data, addr, size);
     TEST_ASSERT_EQUAL_INT32(MT25QU02_OK, status);
     for(uint32_t i = 0; i < size; i++) {
@@ -295,7 +297,11 @@ TEST_GROUP_RUNNER(MT25QU02_4_4_4_MODE) {
    MT25QU02_Init();
    configure_qpi_mode();
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadID);
-//    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadMemory);
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadMemory);
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_WriteMemory);
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase4K);
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase32K);
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase64K);
 //    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI);//一定要执行这个用例
 //    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI);//一定要最后执行这个用例
 }
