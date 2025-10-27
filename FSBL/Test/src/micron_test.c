@@ -307,10 +307,6 @@ TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedReadDTR){
 }
 
 TEST_GROUP_RUNNER(MT25QU02_1_1_1_MODE) {
-   MT25QU02_Init();
-# ifdef TEST_4BYTES_ADDR
-   MT25QU02_Enter4BytesAddressMode();
-# endif
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadID);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadMemory);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_WriteMemory);
@@ -319,66 +315,49 @@ TEST_GROUP_RUNNER(MT25QU02_1_1_1_MODE) {
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase64K);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_DieErase);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead);
-//   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadDTR);
-//   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedReadDTR);
-# ifdef TEST_4BYTES_ADDR
-   MT25QU02_Exit4BytesAddressMode();
-# endif
 }
 
-/* --- QSPI 模式测试组 --- */
-TEST_GROUP(MT25QU02_4_4_4_MODE);
-TEST_SETUP(MT25QU02_4_4_4_MODE) {}
-TEST_TEAR_DOWN(MT25QU02_4_4_4_MODE) {}
 
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI) { ut_enter_qpi_mode_and_verify(); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI) { ut_exit_qpi_mode_and_verify(); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadID) { ut_read_id(); }
-TEST(MT25QU02_4_4_4_MODE,TEST_MT25QU02_ReadMemory){ ut_read_memory_erase_then_verify(0x000000, 256); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_WriteMemory) {
-    uint8_t write_data[256];
-    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
-    ut_write_memory_and_verify(0x000000, write_data, sizeof(write_data));
-}
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase4K){ ut_erase_NK_and_verify(0x001000, MT25QU02_ERASE_4K); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase32K){ ut_erase_NK_and_verify(0x010000, MT25QU02_ERASE_32K); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase64K){ ut_erase_NK_and_verify(0x020000, MT25QU02_ERASE_64K); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_DieErase){ ut_chip_erase_and_verify(); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedRead){
-    uint8_t write_data[64];
-    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
-    ut_memory_mapped_read_verify(0x001000, write_data, sizeof(write_data));
-}
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadDTR) {
-    uint8_t write_data[256];
-    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
-    ut_write_memory_and_verify(0x002000, write_data, sizeof(write_data));
-    ut_read_dtr_memory_and_verify(0x002000, write_data, sizeof(write_data));
-}
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedReadDTR){
-    uint8_t write_data[64];
-    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
-    ut_memory_mapped_read_dtr_verify(0x003000, write_data, sizeof(write_data));
-}
+/* --- MT25QU02 BSP整体测试组 --- */
+TEST_GROUP(MT25QU02_BSP_TEST);
+TEST_SETUP(MT25QU02_BSP_TEST) {}
+TEST_TEAR_DOWN(MT25QU02_BSP_TEST) {}
+TEST_GROUP_RUNNER(MT25QU02_BSP_TEST) {
+	MT25QU02_Init();
 
-TEST_GROUP_RUNNER(MT25QU02_4_4_4_MODE) {
-   MT25QU02_Init();
-   MT25QU02_EnterQPIMode();
-# ifdef TEST_4BYTES_ADDR
-   MT25QU02_Enter4BytesAddressMode();
-# endif
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadID);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadMemory);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_WriteMemory);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase4K);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase32K);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase64K);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_DieErase);
-   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedRead);
-//   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadDTR);
-//   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedReadDTR);
-#ifdef TEST_4BYTES_ADDR
-   MT25QU02_Exit4BytesAddressMode();
-#endif
-   MT25QU02_ExitQPIMode();
+    // 组合1: SPI模式, 3字节地址 (默认)
+    RUN_TEST_GROUP(MT25QU02_1_1_1_MODE);
+
+    // 组合2: SPI模式, 4字节地址
+    if (MT25QU02_Enter4BytesAddressMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_Enter4BytesAddressMode failed");
+    }
+    RUN_TEST_GROUP(MT25QU02_1_1_1_MODE);
+    if (MT25QU02_Exit4BytesAddressMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_Exit4BytesAddressMode failed");
+    }
+
+    // 组合3: QPI模式, 3字节地址
+    if (MT25QU02_EnterQPIMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_EnterQPIMode failed");
+    }
+    RUN_TEST_GROUP(MT25QU02_1_1_1_MODE);
+    if (MT25QU02_ExitQPIMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_ExitQPIMode failed");
+    }
+
+    // 组合4: QPI模式, 4字节地址
+    if (MT25QU02_EnterQPIMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_EnterQPIMode failed");
+    }
+    if (MT25QU02_Enter4BytesAddressMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_Enter4BytesAddressMode failed");
+    }
+    RUN_TEST_GROUP(MT25QU02_1_1_1_MODE);
+    if (MT25QU02_Exit4BytesAddressMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_Exit4BytesAddressMode failed");
+    }
+    if (MT25QU02_ExitQPIMode() != MT25QU02_OK) {
+        TEST_FAIL_MESSAGE("MT25QU02_ExitQPIMode failed");
+    }
 }
