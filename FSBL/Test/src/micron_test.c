@@ -2,13 +2,14 @@
 #include "mt25ql512abb.h"
 #include <stdio.h> // for snprintf
 
-#define TEST_SPI_MODE
+#define TEST_4BYTES_ADDR
 #define TEST_MT25QU02_ERASE_WRITE_SIZE 64
 
 /* 辅助函数：从 flash 读取并与期望缓冲区比较 */
 static void verify_memory_equals(uint32_t addr, const uint8_t *expected, uint32_t len)
 {
 	uint8_t buf[len];
+    for(uint32_t i = 0; i < len; i++) buf[i] = 0;
 	int32_t status = MT25QU02_ReadSTR(buf, addr, len);
 	if (status != MT25QU02_OK) {
 		char msg[128];
@@ -30,6 +31,7 @@ static void verify_memory_equals(uint32_t addr, const uint8_t *expected, uint32_
 static void verify_memory_filled(uint32_t addr, uint8_t value, uint32_t len)
 {
 	uint8_t buf[len];
+    for(uint32_t i = 0; i < len; i++) buf[i] = 0;
 	int32_t status = MT25QU02_ReadSTR(buf, addr, len);
 	if (status != MT25QU02_OK) {
 		char msg[128];
@@ -177,8 +179,8 @@ static void ut_chip_erase_and_verify(void)
     for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
 
     uint32_t a1 = 0x000000;
-    uint32_t a2 = 0x010000;
-    uint32_t a3 = 0x020000;
+    uint32_t a2 = 0x100000;
+    uint32_t a3 = 0x200000;
     const uint32_t addrs[] = { a1, a2, a3 };
     program_multiple_pages(addrs, 3, write_data, write_size);
 
@@ -187,7 +189,7 @@ static void ut_chip_erase_and_verify(void)
     verify_memory_equals(a3, write_data, write_size);
 
     if (MT25QU02_WriteEnable() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
-    if (MT25QU02_ChipErase() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_ChipErase failed");
+    if (MT25QU02_DieErase(0) != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_DieErase failed");
     if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
 
     verify_memory_filled(a1, 0xFF, write_size);
@@ -216,6 +218,44 @@ static void ut_memory_mapped_read_verify(uint32_t write_address, const uint8_t *
     MT25QU02_WriteEnable();
     MT25QU02_BlockErase(write_address, MT25QU02_SUBSECTOR_4K);
     MT25QU02_AutoPollingMemReady();
+
+    HAL_XSPI_Abort(MT25QU02_GetHandle().xspi_handler);
+}
+
+/* --- 辅助函数：DTR模式下内存映射读取验证 --- */
+static void ut_memory_mapped_read_dtr_verify(uint32_t write_address, const uint8_t *data, uint32_t size)
+{
+    MT25QU02_WriteEnable();
+    MT25QU02_BlockErase(write_address, MT25QU02_SUBSECTOR_4K);
+    MT25QU02_AutoPollingMemReady();
+
+    if(MT25QU02_WriteEnable() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_WriteEnable failed");
+    if(MT25QU02_PageProgram((uint8_t*)data, write_address, size) != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_PageProgram failed");
+    if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_AutoPollingMemReady failed");
+    if(MT25QU02_EnableMemoryMappedModeDTR() != MT25QU02_OK) TEST_FAIL_MESSAGE("MT25QU02_EnableMemoryMappedModeDTR failed");
+
+    uint8_t *mem_mapped_ptr = (uint8_t *)0x70000000;
+    for(uint32_t i = 0; i < size; i++) {
+        TEST_ASSERT_EQUAL_UINT8(data[i], mem_mapped_ptr[write_address + i]);
+    }
+
+    MT25QU02_WriteEnable();
+    MT25QU02_BlockErase(write_address, MT25QU02_SUBSECTOR_4K);
+    MT25QU02_AutoPollingMemReady();
+
+    HAL_XSPI_Abort(MT25QU02_GetHandle().xspi_handler);
+}
+
+/* --- 辅助函数：DTR模式下读取并验证 --- */
+static void ut_read_dtr_memory_and_verify(uint32_t addr, const uint8_t *data, uint32_t size)
+{
+    uint8_t read_data[size];
+    for(uint32_t i = 0; i < size; i++) read_data[i] = 0;
+    int32_t status = MT25QU02_ReadDTR(read_data, addr, size);
+    TEST_ASSERT_EQUAL_INT32(MT25QU02_OK, status);
+    for(uint32_t i = 0; i < size; i++) {
+        TEST_ASSERT_EQUAL_UINT8(data[i], read_data[i]);
+    }
 }
 
 static void ut_enter_qpi_mode_and_verify(void)
@@ -248,25 +288,42 @@ TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_WriteMemory) {
 TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase4K){ ut_erase_NK_and_verify(0x001000, MT25QU02_ERASE_4K); }
 TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase32K){ ut_erase_NK_and_verify(0x010000, MT25QU02_ERASE_32K); }
 TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase64K){ ut_erase_NK_and_verify(0x020000, MT25QU02_ERASE_64K); }
-TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ChipErase){ ut_chip_erase_and_verify(); }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_DieErase){ ut_chip_erase_and_verify(); }
 TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead){
     uint8_t write_data[64];
     for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
     ut_memory_mapped_read_verify(0x001000, write_data, sizeof(write_data));
 }
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadDTR) {
+    uint8_t write_data[256];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_write_memory_and_verify(0x002000, write_data, sizeof(write_data));
+    ut_read_dtr_memory_and_verify(0x002000, write_data, sizeof(write_data));
+}
+TEST(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedReadDTR){
+    uint8_t write_data[64];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_memory_mapped_read_dtr_verify(0x003000, write_data, sizeof(write_data));
+}
 
 TEST_GROUP_RUNNER(MT25QU02_1_1_1_MODE) {
    MT25QU02_Init();
-   MT25QU02_EnterQPIMode();
-   MT25QU02_Init();
+# ifdef TEST_4BYTES_ADDR
+   MT25QU02_Enter4BytesAddressMode();
+# endif
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadID);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadMemory);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_WriteMemory);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase4K);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase32K);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_Erase64K);
-//   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ChipErase);
+   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_DieErase);
    RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedRead);
+//   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_ReadDTR);
+//   RUN_TEST_CASE(MT25QU02_1_1_1_MODE, TEST_MT25QU02_MemoryMappedReadDTR);
+# ifdef TEST_4BYTES_ADDR
+   MT25QU02_Exit4BytesAddressMode();
+# endif
 }
 
 /* --- QSPI 模式测试组 --- */
@@ -286,23 +343,42 @@ TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_WriteMemory) {
 TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase4K){ ut_erase_NK_and_verify(0x001000, MT25QU02_ERASE_4K); }
 TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase32K){ ut_erase_NK_and_verify(0x010000, MT25QU02_ERASE_32K); }
 TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase64K){ ut_erase_NK_and_verify(0x020000, MT25QU02_ERASE_64K); }
-TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ChipErase){ ut_chip_erase_and_verify(); }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_DieErase){ ut_chip_erase_and_verify(); }
 TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedRead){
     uint8_t write_data[64];
     for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
     ut_memory_mapped_read_verify(0x001000, write_data, sizeof(write_data));
 }
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadDTR) {
+    uint8_t write_data[256];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_write_memory_and_verify(0x002000, write_data, sizeof(write_data));
+    ut_read_dtr_memory_and_verify(0x002000, write_data, sizeof(write_data));
+}
+TEST(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedReadDTR){
+    uint8_t write_data[64];
+    for(uint32_t i = 0; i < sizeof(write_data); i++) write_data[i] = (uint8_t)i;
+    ut_memory_mapped_read_dtr_verify(0x003000, write_data, sizeof(write_data));
+}
 
 TEST_GROUP_RUNNER(MT25QU02_4_4_4_MODE) {
    MT25QU02_Init();
-   configure_qpi_mode();
+   MT25QU02_EnterQPIMode();
+# ifdef TEST_4BYTES_ADDR
+   MT25QU02_Enter4BytesAddressMode();
+# endif
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadID);
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadMemory);
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_WriteMemory);
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase4K);
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase32K);
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_Erase64K);
+   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_DieErase);
    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedRead);
-//    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_EnterQPI);//一定要执行这个用例
-//    RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ExitQPI);//一定要最后执行这个用例
+//   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_ReadDTR);
+//   RUN_TEST_CASE(MT25QU02_4_4_4_MODE, TEST_MT25QU02_MemoryMappedReadDTR);
+#ifdef TEST_4BYTES_ADDR
+   MT25QU02_Exit4BytesAddressMode();
+#endif
+   MT25QU02_ExitQPIMode();
 }
