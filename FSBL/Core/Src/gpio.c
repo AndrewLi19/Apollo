@@ -33,7 +33,18 @@
 /* USER CODE END 1 */
 
 /** Configure pins
+     PP2   ------> XSPIM_P1_IO2
+     PP4   ------> XSPIM_P1_IO4
      PO1   ------> XSPIM_P1_NCS2
+     PP3   ------> XSPIM_P1_IO3
+     PO4   ------> XSPIM_P1_CLK
+     PO0   ------> XSPIM_P1_NCS1
+     PP6   ------> XSPIM_P1_IO6
+     PP0   ------> XSPIM_P1_IO0
+     PP5   ------> XSPIM_P1_IO5
+     PP1   ------> XSPIM_P1_IO1
+     PP7   ------> XSPIM_P1_IO7
+     PO2   ------> XSPIM_P1_DQS0
 */
 void MX_GPIO_Init(void)
 {
@@ -44,6 +55,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOP_CLK_ENABLE();
   __HAL_RCC_GPIOO_CLK_ENABLE();
+  __HAL_RCC_GPION_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
@@ -55,8 +67,18 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PO1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  /*Configure GPIO pins : PP2 PP4 PP3 PP6
+                           PP0 PP5 PP1 PP7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_4|GPIO_PIN_3|GPIO_PIN_6
+                          |GPIO_PIN_0|GPIO_PIN_5|GPIO_PIN_1|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF9_XSPIM_P1;
+  HAL_GPIO_Init(GPIOP, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PO1 PO4 PO0 PO2 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_0|GPIO_PIN_2;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;

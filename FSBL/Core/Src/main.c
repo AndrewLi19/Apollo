@@ -24,8 +24,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "semperflash_drv.h"
-#include "semperflash_test.h"
+//#include "semperflash_drv.h"
+//#include "semperflash_test.h"
 #include <string.h>
 #define SECTORS_COUNT 100
 #define MEMORY_SECTOR_SIZE 256  // 4KB sector size for SemperFlash
@@ -75,23 +75,22 @@ int main(void)
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
-//  HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
-//  SystemClock_Config();
+  SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
-  /* Initialize all configured peripherals */
-//  MX_GPIO_Init();
 
-//  MX_XSPI1_Init();
-  
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
 //  SEMPER_HandleTypeDef flash1;
   
@@ -103,8 +102,7 @@ int main(void)
   // Initialize test parameters
 //  Semper_Test_Init(&flash1, &hxspi1);
   /* USER CODE END 2 */
-//  Semper_Poll_RDYBSY(&flash1);
-//  Semper_Memory_Mapped_Mode_Test(&flash1);
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 //  Semper_Prog_Page_Test(&flash1);
@@ -148,6 +146,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

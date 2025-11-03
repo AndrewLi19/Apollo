@@ -1,4 +1,5 @@
-#include "semperflash_drv.h"
+//#include "semperflash_drv.h"
+#include "mt25ql512abb.h"
 #include "main.h"
 #include "gpio.h"
 #include "xspi.h"
@@ -8,11 +9,10 @@
 #define LOADER_FAIL	0x0
 
 extern void SystemClock_Config(void);
-extern XSPI_HandleTypeDef hxspi1;
-//static bool FirstInit = true;
-
+extern XSPI_HandleTypeDef hxspi2;
+extern uint32_t FirstInit;
 // Global SemperFlash handle - initialized once in Init() function
-static SEMPER_HandleTypeDef flash1;
+//static SEMPER_HandleTypeDef flash1;
 
 /**
  * @brief  System initialization.
@@ -20,88 +20,96 @@ static SEMPER_HandleTypeDef flash1;
  * @retval  LOADER_OK = 1	: Operation succeeded
  * @retval  LOADER_FAIL = 0	: Operation failed
  */
-int Init(void) {
-//	if(FirstInit)
-//	{
+int Init(void){
+	helper();
+//	uint32_t buffer = *(uint32_t*) 0x70000000;
+//	HAL_XSPI_Abort(&hxspi2) != HAL_OK;
+//	helper();
+//	uint32_t buffer2 = *(uint32_t*) 0x70000000;
+}
+int helper(void) {
 	*(uint32_t*)0xE000EDF0=0xA05F0000; //enable interrupts in debug
+	if(FirstInit != 1234)
+	{
+		SystemInit();
+		SCB->VTOR = 0x34180600;
 
-	SystemInit();
+		__set_PRIMASK(0); //enable interrupts
 
-	SCB->VTOR = 0x34180600;
+		HAL_Init();
 
-	__set_PRIMASK(0); //enable interrupts
+		SystemClock_Config();
 
-	HAL_Init();
+		MX_GPIO_Init();
 
-	SystemClock_Config();
+		HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+		HAL_Delay(100);
+		HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
 
-	MX_GPIO_Init();
+		MX_XSPI2_Init();
+		FirstInit = 1234;
+	}
 
-//		__HAL_RCC_XSPI1_FORCE_RESET();  //completely reset peripheral
-//		__HAL_RCC_XSPI1_RELEASE_RESET();
-	// Initialize XSPI1
-//    HAL_XSPI_DeInit(&hxspi1);
-	MX_XSPI1_Init();
 
 	// Initialize SemperFlash driver using global flash1
-	if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK)
+	if (MT25QU02_Init() != MT25QU02_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
-//		FirstInit = false;
-//	}
-	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
+	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
-	// 先读取Flash ID确保Flash可以正常通信
-//	uint32_t flash_id = 0;
-//	if (Semper_Read_FlashID(&flash1, &flash_id) != SEMPER_OK)
+	if (MT25QU02_EnableMemoryMappedModeSTR() != MT25QU02_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+//  XSPI_RegularCmdTypeDef      s_command = {0};
+//  XSPI_MemoryMappedTypeDef    s_mem_mapped_cfg = {0};
+//
+//  /* Per-file common defaults */
+//  s_command.OperationType      = HAL_XSPI_OPTYPE_READ_CFG;
+//  s_command.IOSelect           = HAL_XSPI_SELECT_IO_3_0;
+//  s_command.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
+//  s_command.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
+//  s_command.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_DISABLE;
+//  s_command.AlternateBytes     = 0;
+//  s_command.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+//  s_command.AlternateBytesWidth= 0;
+//  s_command.AlternateBytesDTRMode = 0;
+//  s_command.AddressWidth = HAL_XSPI_ADDRESS_24_BITS;
+//  s_command.DataDTRMode        = HAL_XSPI_DATA_DTR_DISABLE;
+//  s_command.DQSMode            = HAL_XSPI_DQS_DISABLE;
+//  s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+//  s_command.Instruction     = MT25QU02_FAST_READ_CMD;
+//  s_command.AddressMode     = HAL_XSPI_ADDRESS_1_LINE;
+//  s_command.DummyCycles     = 8;
+//  s_command.DataMode        = HAL_XSPI_DATA_1_LINE;
+//  if(HAL_XSPI_Command(&hxspi2, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+//  {
+//    return LOADER_FAIL;
+//  }
+//
+//  	s_command.OperationType = HAL_XSPI_OPTYPE_WRITE_CFG;
+//	s_command.Instruction = MT25QU02_PAGE_PROG_CMD;
+//	s_command.DummyCycles = 0;
+//
+//	if(HAL_XSPI_Command(&hxspi2, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
 //	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
+//		return LOADER_FAIL; // Command execution failed
 //	}
-//	HAL_Delay(1);
-//	Semper_Erase_Sector(&flash1, 0x00001000, 0x00002000);
-	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
-	{
-		__set_PRIMASK(1); //disable interrupts
-		return LOADER_FAIL;
-	}
-
-//	MassErase();
-	__set_PRIMASK(1); //disable interrupts
+//
+//	s_mem_mapped_cfg.TimeOutActivation = HAL_XSPI_TIMEOUT_COUNTER_DISABLE;
+//
+//	if (HAL_XSPI_MemoryMapped(&hxspi2, &s_mem_mapped_cfg) != HAL_OK)
+//	{
+//	  return LOADER_FAIL;
+//	}
 	return LOADER_OK;
 }
-
-//int Read(uint32_t Address, uint32_t Size, uint8_t *Buffer)
-//{
-//	__set_PRIMASK(0); //enable interrupts
-
-//	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
-
-// 	if (Semper_Read_Memory(&flash1, (Address & (0x0fffffff)), Buffer, Size) != SEMPER_OK)
-// 	{
-// //		__set_PRIMASK(1); //disable interrupts
-// 		return LOADER_FAIL;
-// 	}
-//	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-
-//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
-//	{
-//		return LOADER_FAIL;
-//	}
-
-//	memcpy(Buffer, (uint8_t*)Address, Size);
-//	__set_PRIMASK(1); //disable interrupts
-//	return LOADER_OK;
-//}
 
 
 /**
@@ -113,13 +121,14 @@ int Init(void) {
  * @retval  LOADER_FAIL = 0	: Operation failed
  */
 int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
+//	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
 	const uint32_t MAX_PROG_SIZE = 256;
 	uint32_t current_size, current_addr;
 	uint8_t* current_buffer;
 
 	__set_PRIMASK(0); //enable interrupts
 
-	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
+	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
@@ -133,15 +142,20 @@ int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
 	{
 		// Determine the current chunk size
 		current_size = (Size > MAX_PROG_SIZE) ? MAX_PROG_SIZE : Size;
-		
+
 		// Program the current chunk
-		if (Semper_Prog_Page(&flash1, current_addr, current_buffer, current_size) != SEMPER_OK)
+		if (MT25QU02_WriteEnable() != MT25QU02_OK)
 		{
 			__set_PRIMASK(1); //disable interrupts
 			return LOADER_FAIL;
 		}
-		
-		if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+		if (MT25QU02_PageProgram(current_buffer, current_addr, current_size) != MT25QU02_OK)
+		{
+			__set_PRIMASK(1); //disable interrupts
+			return LOADER_FAIL;
+		}
+
+		if(MT25QU02_AutoPollingMemReady() != MT25QU02_OK)
 		{
 			__set_PRIMASK(1); //disable interrupts
 			return LOADER_FAIL;
@@ -152,7 +166,7 @@ int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
 		Size -= current_size;
 	}
 
-	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+	if (MT25QU02_EnableMemoryMappedModeSTR() != MT25QU02_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
@@ -173,19 +187,25 @@ int SectorErase(uint32_t EraseStartAddress, uint32_t EraseEndAddress) {
 
 	__set_PRIMASK(0); //enable interrupts
 
-	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
+	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
 
-	if (Semper_Erase_Sector(&flash1, (EraseStartAddress & (0x0fffffff)), (EraseEndAddress & (0x0fffffff))) != SEMPER_OK)
+	if (MT25QU02_Erase_Sector(EraseStartAddress & (0x0fffffff), (EraseEndAddress & (0x0fffffff))) != MT25QU02_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
 
-	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+	if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+
+	if (MT25QU02_EnableMemoryMappedModeSTR() != MT25QU02_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
@@ -206,66 +226,66 @@ int SectorErase(uint32_t EraseStartAddress, uint32_t EraseEndAddress) {
  * Note: Optional for all types of device
  */
 int MassErase(void) {
-//	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-	__set_PRIMASK(0); //enable interrupts
-	if (Semper_Flash_Init(&flash1, &hxspi1) != SEMPER_OK)
-	{
-		__set_PRIMASK(1); //disable interrupts
-		return LOADER_FAIL;
-	}
-
-	XSPI_HandleTypeDef* hxspi = (&flash1)->xspi_handler;
-
-	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
-	{
-		__set_PRIMASK(1); //disable interrupts
-		return LOADER_FAIL;
-	}
-
-	if (Semper_Write_Enable(&flash1) != SEMPER_OK)
-	{
-		__set_PRIMASK(1); //disable interrupts
-		return LOADER_FAIL;
-	}
-
-	XSPI_RegularCmdTypeDef cmd = {0};
-
-	if((&flash1)->interface_mode == SEMPER_1S_MODE)
-	{
-		cmd.Instruction = 0x60;
-		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
-		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
-	}
-	else if((&flash1)->interface_mode == SEMPER_8S_MODE)
-	{
-		cmd.Instruction = 0x6060;
-		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
-		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_16_BITS;  // 8S mode uses 16-bit instruction width
-	}
-	else
-	{
-		__set_PRIMASK(1);
-		return LOADER_FAIL;
-	}
-
-	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		__set_PRIMASK(1);
-		return LOADER_FAIL;
-	}
-
-	if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
-	{
-		__set_PRIMASK(1);
-		return LOADER_FAIL;
-	}
-
-	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
-	{
-		__set_PRIMASK(1); //disable interrupts
-		return LOADER_FAIL;
-	}
-	__set_PRIMASK(1); //disable interrupts
+////	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+//	__set_PRIMASK(0); //enable interrupts
+//	if (MT25QU02_Init() != MT25QU02_OK)
+//	{
+//		__set_PRIMASK(1); //disable interrupts
+//		return LOADER_FAIL;
+//	}
+//
+//	XSPI_HandleTypeDef* hxspi = (&flash1)->xspi_handler;
+//
+//	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
+//	{
+//		__set_PRIMASK(1); //disable interrupts
+//		return LOADER_FAIL;
+//	}
+//
+//	if (Semper_Write_Enable(&flash1) != SEMPER_OK)
+//	{
+//		__set_PRIMASK(1); //disable interrupts
+//		return LOADER_FAIL;
+//	}
+//
+//	XSPI_RegularCmdTypeDef cmd = {0};
+//
+//	if((&flash1)->interface_mode == SEMPER_1S_MODE)
+//	{
+//		cmd.Instruction = 0x60;
+//		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+//		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
+//	}
+//	else if((&flash1)->interface_mode == SEMPER_8S_MODE)
+//	{
+//		cmd.Instruction = 0x6060;
+//		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
+//		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_16_BITS;  // 8S mode uses 16-bit instruction width
+//	}
+//	else
+//	{
+//		__set_PRIMASK(1);
+//		return LOADER_FAIL;
+//	}
+//
+//	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+//	{
+//		__set_PRIMASK(1);
+//		return LOADER_FAIL;
+//	}
+//
+//	if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
+//	{
+//		__set_PRIMASK(1);
+//		return LOADER_FAIL;
+//	}
+//
+//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+//	{
+//		__set_PRIMASK(1); //disable interrupts
+//		return LOADER_FAIL;
+//	}
+//	__set_PRIMASK(1); //disable interrupts
 	return LOADER_OK;
 }
 
@@ -359,13 +379,13 @@ uint64_t Verify(uint32_t MemoryAddr, uint32_t RAMBufferAddr, uint32_t Size,uint3
 	uint32_t VerifiedData = 0, InitVal = 0;
 	uint64_t checksum;
 	Size *= 4;
-	if(HAL_XSPI_Abort(&hxspi1) != HAL_OK)
+	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
 
-	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
+	if (MT25QU02_AutoPollingMemReady() != MT25QU02_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
