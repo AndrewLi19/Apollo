@@ -62,52 +62,12 @@ int helper(void) {
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
+//	MT25QU02_Enter4BytesAddressMode();
 	if (MT25QU02_EnableMemoryMappedModeSTR() != MT25QU02_OK)
 	{
 		__set_PRIMASK(1); //disable interrupts
 		return LOADER_FAIL;
 	}
-//  XSPI_RegularCmdTypeDef      s_command = {0};
-//  XSPI_MemoryMappedTypeDef    s_mem_mapped_cfg = {0};
-//
-//  /* Per-file common defaults */
-//  s_command.OperationType      = HAL_XSPI_OPTYPE_READ_CFG;
-//  s_command.IOSelect           = HAL_XSPI_SELECT_IO_3_0;
-//  s_command.InstructionWidth   = HAL_XSPI_INSTRUCTION_8_BITS;
-//  s_command.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
-//  s_command.AddressDTRMode     = HAL_XSPI_ADDRESS_DTR_DISABLE;
-//  s_command.AlternateBytes     = 0;
-//  s_command.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
-//  s_command.AlternateBytesWidth= 0;
-//  s_command.AlternateBytesDTRMode = 0;
-//  s_command.AddressWidth = HAL_XSPI_ADDRESS_24_BITS;
-//  s_command.DataDTRMode        = HAL_XSPI_DATA_DTR_DISABLE;
-//  s_command.DQSMode            = HAL_XSPI_DQS_DISABLE;
-//  s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
-//  s_command.Instruction     = MT25QU02_FAST_READ_CMD;
-//  s_command.AddressMode     = HAL_XSPI_ADDRESS_1_LINE;
-//  s_command.DummyCycles     = 8;
-//  s_command.DataMode        = HAL_XSPI_DATA_1_LINE;
-//  if(HAL_XSPI_Command(&hxspi2, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-//  {
-//    return LOADER_FAIL;
-//  }
-//
-//  	s_command.OperationType = HAL_XSPI_OPTYPE_WRITE_CFG;
-//	s_command.Instruction = MT25QU02_PAGE_PROG_CMD;
-//	s_command.DummyCycles = 0;
-//
-//	if(HAL_XSPI_Command(&hxspi2, &s_command, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-//	{
-//		return LOADER_FAIL; // Command execution failed
-//	}
-//
-//	s_mem_mapped_cfg.TimeOutActivation = HAL_XSPI_TIMEOUT_COUNTER_DISABLE;
-//
-//	if (HAL_XSPI_MemoryMapped(&hxspi2, &s_mem_mapped_cfg) != HAL_OK)
-//	{
-//	  return LOADER_FAIL;
-//	}
 	return LOADER_OK;
 }
 
@@ -122,7 +82,7 @@ int helper(void) {
  */
 int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
 //	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-	const uint32_t MAX_PROG_SIZE = 256;
+	const uint32_t MAX_PROG_SIZE = 4;
 	uint32_t current_size, current_addr;
 	uint8_t* current_buffer;
 
@@ -161,6 +121,7 @@ int Write(uint32_t Address, uint32_t Size, uint8_t* buffer) {
 			return LOADER_FAIL;
 		}
 		// Update pointers and remaining size
+//		HAL_XSPI_Abort(&hxspi2);
 		current_addr += current_size;
 		current_buffer += current_size;
 		Size -= current_size;
@@ -226,66 +187,56 @@ int SectorErase(uint32_t EraseStartAddress, uint32_t EraseEndAddress) {
  * Note: Optional for all types of device
  */
 int MassErase(void) {
-////	HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-//	__set_PRIMASK(0); //enable interrupts
-//	if (MT25QU02_Init() != MT25QU02_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
-//
-//	XSPI_HandleTypeDef* hxspi = (&flash1)->xspi_handler;
-//
-//	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
-//
-//	if (Semper_Write_Enable(&flash1) != SEMPER_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
-//
-//	XSPI_RegularCmdTypeDef cmd = {0};
-//
-//	if((&flash1)->interface_mode == SEMPER_1S_MODE)
-//	{
-//		cmd.Instruction = 0x60;
-//		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
-//		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
-//	}
-//	else if((&flash1)->interface_mode == SEMPER_8S_MODE)
-//	{
-//		cmd.Instruction = 0x6060;
-//		cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
-//		cmd.InstructionWidth = HAL_XSPI_INSTRUCTION_16_BITS;  // 8S mode uses 16-bit instruction width
-//	}
-//	else
-//	{
-//		__set_PRIMASK(1);
-//		return LOADER_FAIL;
-//	}
-//
-//	if(HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-//	{
-//		__set_PRIMASK(1);
-//		return LOADER_FAIL;
-//	}
-//
-//	if(Semper_Poll_RDYBSY(&flash1) != SEMPER_OK)
-//	{
-//		__set_PRIMASK(1);
-//		return LOADER_FAIL;
-//	}
-//
-//	if (Semper_EnableMemoryMappedMode(&flash1) != SEMPER_OK)
-//	{
-//		__set_PRIMASK(1); //disable interrupts
-//		return LOADER_FAIL;
-//	}
-//	__set_PRIMASK(1); //disable interrupts
+	__set_PRIMASK(0); //enable interrupts
+	if(HAL_XSPI_Abort(&hxspi2) != HAL_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+
+	uint32_t Die1Address = 0x00000000;
+	uint32_t Die2Address = 0x04000000;
+	uint32_t Die3Address = 0x08000000;
+	uint32_t Die4Address = 0x0C000000;
+
+	if (ut_erase_die(Die1Address) != LOADER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+	if (ut_erase_die(Die2Address) != LOADER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+	if (ut_erase_die(Die3Address) != LOADER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+	if (ut_erase_die(Die4Address) != LOADER_OK)
+	{
+		__set_PRIMASK(1); //disable interrupts
+		return LOADER_FAIL;
+	}
+	__set_PRIMASK(1); //disable interrupts
+	return LOADER_OK;
+}
+
+int ut_erase_die(uint32_t DieAddress)
+{
+	if(MT25QU02_WriteEnable() != MT25QU02_OK)
+	{
+		return LOADER_FAIL;
+	}
+	if(MT25QU02_DieErase(DieAddress) != MT25QU02_OK)
+	{
+		return LOADER_FAIL;
+	}
+	if(MT25QU02_AutoPollingMemReady() != MT25QU02_OK)
+	{
+		return LOADER_FAIL;
+	}
 	return LOADER_OK;
 }
 

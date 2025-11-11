@@ -169,7 +169,7 @@ int32_t MT25QU02_AutoPollingMemReady()
   s_config.IntervalTime  = MT25QU02_AUTOPOLLING_INTERVAL_TIME;
   s_config.AutomaticStop = HAL_XSPI_AUTOMATIC_STOP_ENABLE;
 
-  if (HAL_XSPI_AutoPolling(Ctx, &s_config, 300000) != HAL_OK)
+  if (HAL_XSPI_AutoPolling(Ctx, &s_config, 3000) != HAL_OK)
   {
     return MT25QU02_ERROR;
   }
