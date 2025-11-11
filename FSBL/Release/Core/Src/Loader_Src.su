@@ -1,0 +1,8 @@
+../Core/Src/Loader_Src.c:30:5:helper	16	static,ignoring_inline_asm
+../Core/Src/Loader_Src.c:23:5:Init	0	static
+../Core/Src/Loader_Src.c:83:5:Write	24	static,ignoring_inline_asm
+../Core/Src/Loader_Src.c:147:5:SectorErase	16	static,ignoring_inline_asm
+../Core/Src/Loader_Src.c:226:5:ut_erase_die	8	static
+../Core/Src/Loader_Src.c:189:5:MassErase	16	static,ignoring_inline_asm
+../Core/Src/Loader_Src.c:254:10:CheckSum	20	static
+../Core/Src/Loader_Src.c:327:10:Verify	32	static,ignoring_inline_asm

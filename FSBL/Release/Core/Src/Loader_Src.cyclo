@@ -1,0 +1,8 @@
+../Core/Src/Loader_Src.c:30:5:helper	5
+../Core/Src/Loader_Src.c:23:5:Init	1
+../Core/Src/Loader_Src.c:83:5:Write	7
+../Core/Src/Loader_Src.c:147:5:SectorErase	5
+../Core/Src/Loader_Src.c:226:5:ut_erase_die	3
+../Core/Src/Loader_Src.c:189:5:MassErase	6
+../Core/Src/Loader_Src.c:254:10:CheckSum	9
+../Core/Src/Loader_Src.c:327:10:Verify	5
