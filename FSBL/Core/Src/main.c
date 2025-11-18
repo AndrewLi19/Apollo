@@ -17,12 +17,12 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <semperflash_test.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "unity_fixture.h"
+#include "stm32n6xx_hal_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,6 +42,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+UART_HandleTypeDef huart5;
+DMA_NodeTypeDef Node_GPDMA1_Channel1 __NON_CACHEABLE;
+DMA_QListTypeDef List_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel0;
+
 XSPI_HandleTypeDef hxspi1;
 XSPI_HandleTypeDef hxspi2;
 
@@ -52,7 +58,9 @@ XSPI_HandleTypeDef hxspi2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_GPDMA1_Init(void);
 static void MX_XSPI1_Init(void);
+static void MX_UART5_Init(void);
 static void MX_XSPI2_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -94,13 +102,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_XSPI1_Init();
+  MX_UART5_Init();
   MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
 
   int argc = 0;
   char * argv;
-  UnityMain(argc, argv, RunAllTests);
+//  UnityMain(argc, argv, RunAllTests);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -110,6 +120,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	uint8_t pTxBuff[10];
+	for (int i = 0; i < 10; i++)
+	{
+		pTxBuff[i] = i;
+	}
+    HAL_UART_Transmit_DMA(&huart5, pTxBuff, 10);
+    HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -196,6 +213,84 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief GPDMA1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPDMA1_Init(void)
+{
+
+  /* USER CODE BEGIN GPDMA1_Init 0 */
+
+  /* USER CODE END GPDMA1_Init 0 */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
+
+  /* GPDMA1 interrupt Init */
+    HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
+
+  /* USER CODE BEGIN GPDMA1_Init 1 */
+
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
+
+  /* USER CODE END GPDMA1_Init 2 */
+
+}
+
+/**
+  * @brief UART5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART5_Init(void)
+{
+
+  /* USER CODE BEGIN UART5_Init 0 */
+
+  /* USER CODE END UART5_Init 0 */
+
+  /* USER CODE BEGIN UART5_Init 1 */
+
+  /* USER CODE END UART5_Init 1 */
+  huart5.Instance = UART5;
+  huart5.Init.BaudRate = 115200;
+  huart5.Init.WordLength = UART_WORDLENGTH_8B;
+  huart5.Init.StopBits = UART_STOPBITS_1;
+  huart5.Init.Parity = UART_PARITY_NONE;
+  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart5.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart5, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart5, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART5_Init 2 */
+
+  /* USER CODE END UART5_Init 2 */
+
+}
+
+/**
   * @brief XSPI1 Initialization Function
   * @param None
   * @retval None
@@ -269,7 +364,7 @@ static void MX_XSPI2_Init(void)
   hxspi2.Init.MemoryMode = HAL_XSPI_SINGLE_MEM;
   hxspi2.Init.MemoryType = HAL_XSPI_MEMTYPE_MICRON;
   hxspi2.Init.MemorySize = HAL_XSPI_SIZE_2GB;
-  hxspi2.Init.ChipSelectHighTimeCycle = 2;
+  hxspi2.Init.ChipSelectHighTimeCycle = 1;
   hxspi2.Init.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE;
   hxspi2.Init.ClockMode = HAL_XSPI_CLOCK_MODE_0;
   hxspi2.Init.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED;
@@ -310,9 +405,11 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOP_CLK_ENABLE();
   __HAL_RCC_GPIOO_CLK_ENABLE();
   __HAL_RCC_GPION_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
