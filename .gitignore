@@ -9,3 +9,4 @@ Release/*
 /Debug/
 /FSBL/Debug/
 /FSBL/Release/
+.vscode/

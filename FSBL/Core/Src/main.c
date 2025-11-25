@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "unity_fixture.h"
 #include "stm32n6xx_hal_uart.h"
+#include "trace.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,7 +108,7 @@ int main(void)
   MX_UART5_Init();
   MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
-
+  Trace_Init_CortexM55();
   int argc = 0;
   char * argv;
 //  UnityMain(argc, argv, RunAllTests);
